@@ -19727,5 +19727,14 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
             }
         }
+
+    public void showResizingFrame(Rect rect) {
+        this.mWindowManager.showResizingFrame(rect);
+    }
+
+    public void hideResizingFrame() {
+        this.mWindowManager.hideResizingFrame();
+    }
+
     }
 }

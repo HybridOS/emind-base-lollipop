@@ -394,6 +394,11 @@ public interface IActivityManager extends IInterface {
     public long[] getProcessPss(int[] pids) throws RemoteException;
 
     public void showBootMessage(CharSequence msg, boolean always) throws RemoteException;
+   
+    //[emindsoft]Add by xiezhongtian for compile err as below:
+    //"indowFrameView.java:158: 错误: 找不到符号 ActivityManagerNative.getDefault().showResizingFrame(r);"
+
+    //public void showResizingFrame(Rect rect) throws RemoteException; 
 
     public void keyguardWaitingForActivityDrawn() throws RemoteException;
 

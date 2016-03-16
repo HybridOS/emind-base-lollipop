@@ -40,6 +40,8 @@ import com.android.internal.widget.DecorContentParent;
 import com.android.internal.widget.SwipeDismissLayout;
 
 import android.app.ActivityManager;
+import android.app.ActivityManager.RunningAppProcessInfo;
+import android.app.ActivityManagerNative;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -50,6 +52,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
+import android.hardware.input.InputManager;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.session.MediaController;
@@ -60,6 +64,7 @@ import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
+import android.os.Process;
 import android.os.ServiceManager;
 import android.transition.Scene;
 import android.transition.Transition;
@@ -89,6 +94,8 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.graphics.drawable.ColorDrawable;
+import android.hardware.input.InputManager;
 import android.view.ViewGroup;
 import android.view.ViewManager;
 import android.view.ViewParent;
@@ -2180,6 +2187,11 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         private boolean mChanging;
 
+        //mDecorContainer used to mount app content #Fixed by xiezhongtian 
+        private FrameLayout mDecorContainer; 
+        private WindowFrameView mWindowFrame;
+        WindowManager mWindowManager;
+        
         private Drawable mMenuBackground;
         private boolean mWatchingForMenu;
         private int mDownY;
@@ -2196,8 +2208,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         private final ColorViewState mStatusColorViewState = new ColorViewState(
                 SYSTEM_UI_FLAG_FULLSCREEN, FLAG_TRANSLUCENT_STATUS,
-                Gravity.TOP,
-                STATUS_BAR_BACKGROUND_TRANSITION_NAME,
+                Gravity.TOP, STATUS_BAR_BACKGROUND_TRANSITION_NAME,
                 com.android.internal.R.id.statusBarBackground,
                 FLAG_FULLSCREEN);
         private final ColorViewState mNavigationColorViewState = new ColorViewState(

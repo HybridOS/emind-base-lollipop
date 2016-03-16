@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/window_frame" android:background="@drawable/window_frame_bg" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:layout_gravity="center" android:orientation="horizontal" android:id="@id/mwDecorHeader" android:background="@drawable/window_frame_header_back" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwBackBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="wrap_content" android:layout_marginLeft="0.0dip" android:src="@drawable/window_frame_back" android:scaleType="fitXY" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/mwSep1" android:background="#ffeaeaea" android:layout_width="1.0dip" android:layout_height="fill_parent" />
+        <LinearLayout android:layout_gravity="center_vertical" android:orientation="horizontal" android:id="@id/wmAppCustomized" android:visibility="visible" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_weight="1.0">
+            <TextView android:textSize="16.0sp" android:textColor="@color/black" android:ellipsize="end" android:gravity="center" android:layout_gravity="center" android:id="@id/mwTitle" android:paddingLeft="8.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:singleLine="true" />
+        </LinearLayout>
+        <View android:layout_width="0.0dip" android:layout_height="@dimen/mw_header_height" />
+        <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwStretchBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/window_frame_drag" android:scaleType="fitXY" />
+        <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwMinBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/window_frame_min" android:scaleType="fitXY" />
+        <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwMaxBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/window_frame_maxmize" android:scaleType="fitXY" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/mwSep2" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/window_frame_header_line" />
+        <ImageButton android:id="@id/mwCloseBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/window_frame_close" android:scaleType="fitXY" />
+    </LinearLayout>
+    <FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <FrameLayout android:id="@id/decor_container" android:layout_width="fill_parent" android:layout_height="fill_parent" />
+        <ImageView android:id="@id/mwSepLine" android:layout_width="fill_parent" android:layout_height="1.0dip" android:src="@drawable/window_frame_sepline" android:scaleType="fitXY" />
+    </FrameLayout>
+</LinearLayout>

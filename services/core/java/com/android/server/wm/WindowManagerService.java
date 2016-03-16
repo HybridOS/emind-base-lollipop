@@ -23,11 +23,13 @@ import android.app.AppOpsManager;
 import android.os.Build;
 import android.os.SystemService;
 import android.util.ArraySet;
+import android.util.ChaoZhuoUtils;
 import android.util.TimeUtils;
 import android.view.IWindowId;
 
 import android.view.IWindowSessionCallback;
 import android.view.WindowContentFrameStats;
+import android.view.WindowInfo;
 import com.android.internal.app.IBatteryStats;
 import com.android.internal.policy.PolicyManager;
 import com.android.internal.policy.impl.PhoneWindowManager;
@@ -435,6 +437,9 @@ public class WindowManagerService extends IWindowManager.Stub
      * so we need to tell when the animation is done.
      */
     final ArrayList<WindowState> mRelayoutWhileAnimating = new ArrayList<WindowState>();
+ 
+    //[emindsoft] add by xiezhongtian for "showResizingFrame"
+    ResizingStackFrame mResizingStackFrame;
 
     /**
      * Used when rebuilding window list to keep track of windows that have
@@ -5254,10 +5259,32 @@ public class WindowManagerService extends IWindowManager.Stub
             if (stack.setBounds(bounds)) {
                 stack.resizeWindows();
                 stack.getDisplayContent().layoutNeeded = true;
+                hideResizingFrame();
                 performLayoutAndPlaceSurfacesLocked();
             }
         }
     }
+    
+    public void showResizingFrame(Rect bounds) {
+          SurfaceControl.openTransaction();
+          try {
+              this.mResizingStackFrame.setBounds(bounds);
+              this.mResizingStackFrame.setVisibility(HIDE_STACK_CRAWLS);
+          } finally {
+              SurfaceControl.closeTransaction();
+          }
+      }
+
+    public void hideResizingFrame() {
+          SurfaceControl.openTransaction();
+          try {
+              this.mResizingStackFrame.setVisibility(SHOW_TRANSACTIONS);
+          } finally {
+              SurfaceControl.closeTransaction();
+          }
+      }
+
+
 
     public void getStackBounds(int stackId, Rect bounds) {
         final TaskStack stack = mStackIdToStack.get(stackId);

@@ -252,8 +252,9 @@ public final class ViewRootImpl implements ViewParent,
 
     final DisplayAdjustments mDisplayAdjustments;
 
-    // These are accessed by multiple threads.
-    final Rect mWinFrame; // frame given by window manager.
+    // These are accessed by mult
+    // Add public for mWinFrameiple threads.
+    public final Rect mWinFrame; // frame given by window manager. 
 
     final Rect mPendingOverscanInsets = new Rect();
     final Rect mPendingVisibleInsets = new Rect();
