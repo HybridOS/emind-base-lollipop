@@ -174,4 +174,16 @@
     <color name="Pink_800">#ffad1457</color>
     <color name="Red_700">#ffc53929</color>
     <color name="Red_800">#ffb93221</color>
+    <!--add by xiezhongtian-->
+    <color name="mw_blue_decor">#ff76ceea</color>
+    <color name="mw_white_border">#ffffffff</color>
+    <color name="mw_transparent_white">#b3ffffff</color>
+    <color name="context_item_bg_color_hover">#ffebebeb</color>
+    <color name="context_item_bg_color_nomal">#ffffffff</color>
+    <color name="edit_popup_text_color">#ff303030</color>
+    <color name="chaozhuo_resolver_default_color">#ff8adb7a</color>
+    <color name="chaozhuo_resolver_lastused_color">#ff88c1df</color>
+    <color name="chaozhuo_resolver_list_item_hovered">#33bababa</color>
+    <color name="chaozhuo_resolver_list_item_pressed">#4cbababa</color>
+
 </resources>

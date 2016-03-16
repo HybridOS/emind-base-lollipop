@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/mwDecorHeader" android:background="@drawable/window_frame_head" android:layout_width="fill_parent" android:layout_height="@dimen/mw_header_height"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwBackBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="wrap_content" android:layout_marginLeft="0.0dip" android:src="@drawable/chaozhuo_topbar_back" android:scaleType="fitXY" />
+    <ImageView android:layout_gravity="center_vertical" android:id="@id/mwSep1" android:background="#ffeaeaea" android:layout_width="1.0dip" android:layout_height="fill_parent" />
+    <LinearLayout android:layout_gravity="center_vertical" android:orientation="horizontal" android:id="@id/wmAppCustomized" android:visibility="visible" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_weight="1.0" />
+    <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwMinBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/chaozhuo_topbar_min" android:scaleType="fitXY" />
+    <ImageButton android:layout_gravity="center_vertical" android:id="@id/mwMaxBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/chaozhuo_topbar_restore" android:scaleType="fitXY" />
+    <ImageView android:layout_gravity="center_vertical" android:id="@id/mwSep2" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/window_frame_header_line" />
+    <ImageButton android:id="@id/mwCloseBtn" android:background="@null" android:layout_width="@dimen/frame_btn_width" android:layout_height="fill_parent" android:src="@drawable/chaozhuo_topbar_close" android:scaleType="fitXY" />
+</LinearLayout>

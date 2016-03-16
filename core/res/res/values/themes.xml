@@ -195,6 +195,9 @@ please see themes_device_defaults.xml.
         <item name="statusBarColor">@color/black</item>
         <item name="navigationBarColor">@color/black</item>
         <item name="windowActionBarFullscreenDecorLayout">@layout/screen_action_bar</item>
+        <!--
+        <item name="windowWithWindowFrame">false</item> 
+        -->
         <item name="windowContentTransitions">false</item>
         <item name="windowActivityTransitions">false</item>
 
@@ -328,6 +331,9 @@ please see themes_device_defaults.xml.
         <item name="checkBoxPreferenceStyle">@style/Preference.CheckBoxPreference</item>
         <item name="switchPreferenceStyle">@style/Preference.SwitchPreference</item>
         <item name="seekBarPreferenceStyle">@style/Preference.SeekBarPreference</item>
+        <!--
+        <item name="dialogThemeWithFrame">@style/Theme.Dialog.WithFrame</item>
+        -->
         <item name="yesNoPreferenceStyle">@style/Preference.DialogPreference.YesNoPreference</item>
         <item name="dialogPreferenceStyle">@style/Preference.DialogPreference</item>
         <item name="editTextPreferenceStyle">@style/Preference.DialogPreference.EditTextPreference</item>
@@ -617,6 +623,14 @@ please see themes_device_defaults.xml.
     <!-- Style to apply on top of a wallpaper settings theme when it is being
          shown on top of the real wallpaper -->
     <style name="PreviewWallpaperSettings" />
+    <style name="Theme.Dialog.WithFrame" parent="@style/Theme.Dialog">
+        <item name="windowBackground">@null</item>
+        <item name="windowCloseOnTouchOutside">false</item>
+        <!--
+        <item name="windowWithWindowFrame">true</item>
+        -->
+    </style>
+
 
     <!-- Theme for translucent activities (on API level 10 and lower). That is, windows
          that allow you to see through them to the windows behind.  This sets up the translucent

@@ -32,10 +32,14 @@
     <dimen name="toast_y_offset">64dip</dimen>
     <!-- Height of the status bar -->
     <dimen name="status_bar_height">25dip</dimen>
+    <!--add by xiezhongtian-->
+    <dimen name="swipe_threshold">25.0dip</dimen>
     <!-- Height of the bottom navigation / system bar. -->
     <dimen name="navigation_bar_height">48dp</dimen>
     <!-- Height of the bottom navigation bar in portrait; often the same as @dimen/navigation_bar_height -->
     <dimen name="navigation_bar_height_landscape">48dp</dimen>
+    <!--add by xiezhongtian-->
+    <dimen name="navigation_bar_shadow_padding_outside">6.669983dip</dimen>
     <!-- Width of the navigation bar when it is placed vertically on the screen -->
     <dimen name="navigation_bar_width">42dp</dimen>
     <!-- Height of notification icons in the status bar -->
@@ -423,5 +427,19 @@
      <dimen name="light_radius">600dp</dimen>
      <item type="dimen" format="float" name="ambient_shadow_alpha">0.075</item>
      <item type="dimen" format="float" name="spot_shadow_alpha">0.15</item>
+
+     <!--add by xiezhongtian-->
+
+    <dimen name="ime_window_width">400.0dip</dimen>
+    <dimen name="edit_popup_padding">13.0dip</dimen>
+    <dimen name="mw_header_height">34.0dip</dimen>
+    <dimen name="big_screen_width">1200.0dip</dimen>
+    <dimen name="big_screen_height">700.0dip</dimen>
+    <dimen name="big_screen_window_width">1100.0dip</dimen>
+    <dimen name="big_screen_window_height">620.0dip</dimen>
+    <dimen name="window_screen_margin">30.0dip</dimen>
+    <dimen name="window_resizing_border">4.0dip</dimen>
+    <dimen name="frame_btn_width">42.0dip</dimen>
+    <dimen name="window_resize_minsize">320.0dip</dimen>
 
 </resources>

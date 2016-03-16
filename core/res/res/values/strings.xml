@@ -5168,5 +5168,12 @@
     <string name="stk_cc_ss_to_dial">SS request is modified to DIAL request.</string>
     <string name="stk_cc_ss_to_ussd">SS request is modified to USSD request.</string>
     <string name="stk_cc_ss_to_ss">SS request is modified to new SS request.</string>
+    <!--add by xiezhongtian -->
+    <string name="chaozhuo_resolver_default">Default</string>
+    <string name="chaozhuo_resolver_lastused">Last Used</string>
+    <string name="chaozhuo_memory_policy_tip">Low Memory! %s is Minimized.</string>
+    <string name="chaozhuo_window_stretch_tip">Drag button to change window size.</string>
+    <string name="ime_input_method_switch_success">Fast switching of input method</string>
+    <string name="ime_input_method_cant_support">The input method does not support fast switching</string>
 
 </resources>

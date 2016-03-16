@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:drawable="@drawable/window_frame_drag_hover" />
+    <item android:drawable="@drawable/window_frame_drag_hover" android:state_hovered="true" />
+    <item android:state_pressed="true" android:drawable="@drawable/window_frame_drag_pushed" />
+    <item android:state_window_focused="false" android:drawable="@drawable/window_frame_drag_u" />
+    <item android:state_window_focused="true" android:drawable="@drawable/window_frame_drag_normal" />
+</selector>
