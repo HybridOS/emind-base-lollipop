@@ -23,6 +23,8 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.os.BatteryStats;
+import android.os.Binder;/*add by xiezhongtian*/
+import android.os.IInterface;/*end*/
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 
@@ -1599,7 +1601,169 @@ public class ActivityManager {
             return null;
         }
     }
-    
+   
+   /*add by xiezhongtian for import ITaskStateListenerCallback*/
+   public interface ITaskStateListenerCallback extends IInterface {
+        public static abstract class Stub extends Binder implements ITaskStateListenerCallback {
+         private static final String DESCRIPTOR = "android.app.ITaskStateListenerCallback";
+         static final int TRANSACTION_onActivityWindowVisible = 6;
+         static final int TRANSACTION_onTaskClose = 2;
+         static final int TRANSACTION_onTaskCreate = 1;
+         static final int TRANSACTION_onTaskFocuseChange = 3;
+         static final int TRANSACTION_onTaskMinimized = 4;
+         static final int TRANSACTION_onTaskProcessStarted = 5;
+
+         private static class Proxy implements ITaskStateListenerCallback {
+             private IBinder mRemote;
+
+             Proxy(IBinder remote) {
+                 this.mRemote = remote;
+             }
+
+             public IBinder asBinder() {
+                 return this.mRemote;
+             }
+
+             public String getInterfaceDescriptor() {
+                 return Stub.DESCRIPTOR;
+             }
+
+             public void onTaskCreate(RecentTaskInfo info) throws RemoteException {
+                 Parcel _data = Parcel.obtain();
+                 try {
+                     _data.writeInterfaceToken(Stub.DESCRIPTOR);
+                     info.writeToParcel(_data, ActivityManager.USER_OP_SUCCESS);
+                     this.mRemote.transact(Stub.TRANSACTION_onTaskCreate, _data, null, Stub.TRANSACTION_onTaskCreate);
+                 } finally {
+                     _data.recycle();
+                 }
+             }
+
+             public void onTaskClose(RecentTaskInfo info) throws RemoteException {
+                 Parcel _data = Parcel.obtain();
+                 try {
+                     _data.writeInterfaceToken(Stub.DESCRIPTOR);
+                     info.writeToParcel(_data, ActivityManager.USER_OP_SUCCESS);
+                     this.mRemote.transact(Stub.TRANSACTION_onTaskClose, _data, null, Stub.TRANSACTION_onTaskCreate);
+                 } finally {
+                     _data.recycle();
+                 }
+             }
+
+             public void onTaskFocuseChange(RecentTaskInfo info) throws RemoteException {
+                 Parcel _data = Parcel.obtain();
+                 try {
+                     _data.writeInterfaceToken(Stub.DESCRIPTOR);
+                     info.writeToParcel(_data, ActivityManager.USER_OP_SUCCESS);
+                     this.mRemote.transact(Stub.TRANSACTION_onTaskFocuseChange, _data, null, Stub.TRANSACTION_onTaskCreate);
+                 } finally {
+                     _data.recycle();
+                 }
+             }
+
+             public void onTaskMinimized(RecentTaskInfo info) throws RemoteException {
+                 Parcel _data = Parcel.obtain();
+                 try {
+                     _data.writeInterfaceToken(Stub.DESCRIPTOR);
+                     info.writeToParcel(_data, ActivityManager.USER_OP_SUCCESS);
+                     this.mRemote.transact(Stub.TRANSACTION_onTaskMinimized, _data, null, Stub.TRANSACTION_onTaskCreate);
+                 } finally {
+                     _data.recycle();
+                 }
+             }
+
+             public void onTaskProcessStarted(RecentTaskInfo info) throws RemoteException {
+                 Parcel _data = Parcel.obtain();
+                 try {
+                     _data.writeInterfaceToken(Stub.DESCRIPTOR);
+                     info.writeToParcel(_data, ActivityManager.USER_OP_SUCCESS);
+                     this.mRemote.transact(Stub.TRANSACTION_onTaskProcessStarted, _data, null, Stub.TRANSACTION_onTaskCreate);
+                 } finally {
+                     _data.recycle();
+                 }
+             }
+
+             public void onTaskActivityWindowVisible(RecentTaskInfo info) throws RemoteException {
+                 Parcel _data = Parcel.obtain();
+                 try {
+                     _data.writeInterfaceToken(Stub.DESCRIPTOR);
+                     info.writeToParcel(_data, ActivityManager.USER_OP_SUCCESS);
+                     this.mRemote.transact(Stub.TRANSACTION_onActivityWindowVisible, _data, null, Stub.TRANSACTION_onTaskCreate);
+                 } finally {
+                     _data.recycle();
+                 }
+             }
+         }
+
+         public Stub() {
+             attachInterface(this, DESCRIPTOR);
+         }
+
+         public static ITaskStateListenerCallback asInterface(IBinder obj) {
+             if (obj == null) {
+                 return null;
+             }
+             IInterface iin = obj.queryLocalInterface(DESCRIPTOR);
+             if (iin == null || !(iin instanceof ITaskStateListenerCallback)) {
+                 return new Proxy(obj);
+             }
+             return (ITaskStateListenerCallback) iin;
+         }
+
+         public IBinder asBinder() {
+             return this;
+         }
+
+         public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+             switch (code) {
+                 case TRANSACTION_onTaskCreate /*1*/:
+                     data.enforceInterface(DESCRIPTOR);
+                     onTaskCreate((RecentTaskInfo) RecentTaskInfo.CREATOR.createFromParcel(data));
+                     return true;
+                 case TRANSACTION_onTaskClose /*2*/:
+                     data.enforceInterface(DESCRIPTOR);
+                     onTaskClose((RecentTaskInfo) RecentTaskInfo.CREATOR.createFromParcel(data));
+                     return true;
+                 case TRANSACTION_onTaskFocuseChange /*3*/:
+                     data.enforceInterface(DESCRIPTOR);
+                     onTaskFocuseChange((RecentTaskInfo) RecentTaskInfo.CREATOR.createFromParcel(data));
+                     return true;
+                 case TRANSACTION_onTaskMinimized /*4*/:
+                     data.enforceInterface(DESCRIPTOR);
+                     onTaskMinimized((RecentTaskInfo) RecentTaskInfo.CREATOR.createFromParcel(data));
+                     return true;
+                 case TRANSACTION_onTaskProcessStarted /*5*/:
+                     data.enforceInterface(DESCRIPTOR);
+                     onTaskProcessStarted((RecentTaskInfo) RecentTaskInfo.CREATOR.createFromParcel(data));
+                     return true;
+                 case TRANSACTION_onActivityWindowVisible /*6*/:
+                     data.enforceInterface(DESCRIPTOR);
+                     onTaskActivityWindowVisible((RecentTaskInfo) RecentTaskInfo.CREATOR.createFromParcel(data));
+                     return true;
+                 case IBinder.INTERFACE_TRANSACTION /*1598968902*/:
+                     reply.writeString(DESCRIPTOR);
+                     return true;
+                 default:
+                     return super.onTransact(code, data, reply, flags);
+             }
+         }
+     }
+
+     void onTaskActivityWindowVisible(RecentTaskInfo recentTaskInfo) throws RemoteException;
+
+     void onTaskClose(RecentTaskInfo recentTaskInfo) throws RemoteException;
+
+     void onTaskCreate(RecentTaskInfo recentTaskInfo) throws RemoteException;
+
+     void onTaskFocuseChange(RecentTaskInfo recentTaskInfo) throws RemoteException;
+
+     void onTaskMinimized(RecentTaskInfo recentTaskInfo) throws RemoteException;
+
+     void onTaskProcessStarted(RecentTaskInfo recentTaskInfo) throws RemoteException;
+ }
+
+  
+
     /**
      * Information you can retrieve about the available memory through
      * {@link ActivityManager#getMemoryInfo}.
@@ -1684,7 +1848,7 @@ public class ActivityManager {
         private MemoryInfo(Parcel source) {
             readFromParcel(source);
         }
-    }
+    }/*end for ITaskStateListenerCallback xiezhontian*/
 
     /**
      * Return general information about the memory state of the system.  This
@@ -1713,6 +1877,8 @@ public class ActivityManager {
         public int[] taskIds;
         public String[] taskNames;
         public int displayId;
+        public boolean floating;/*add by xiezhongtian*/
+        public boolean infront;/*end*/
 
         @Override
         public int describeContents() {
@@ -1721,6 +1887,7 @@ public class ActivityManager {
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
+            int i = ActivityManager.START_RETURN_INTENT_TO_CALLER;
             dest.writeInt(stackId);
             dest.writeInt(bounds.left);
             dest.writeInt(bounds.top);
@@ -1729,15 +1896,34 @@ public class ActivityManager {
             dest.writeIntArray(taskIds);
             dest.writeStringArray(taskNames);
             dest.writeInt(displayId);
+            /*add by xiezhongtian*/
+            dest.writeInt(this.floating ? ActivityManager.START_RETURN_INTENT_TO_CALLER : ActivityManager.USER_OP_SUCCESS);
+            if (!this.infront) {
+                i = ActivityManager.USER_OP_SUCCESS;
+            }
+            dest.writeInt(i);/*end*/
         }
 
         public void readFromParcel(Parcel source) {
+            boolean z;/*add by xiezhongtian*/
+            boolean z2 = true;/*end*/
             stackId = source.readInt();
             bounds = new Rect(
                     source.readInt(), source.readInt(), source.readInt(), source.readInt());
             taskIds = source.createIntArray();
             taskNames = source.createStringArray();
             displayId = source.readInt();
+            /*add by xiezhongtian*/
+            if (source.readInt() == ActivityManager.START_RETURN_INTENT_TO_CALLER) {
+                z = true;
+            } else {
+                z = false;
+            }
+            this.floating = z;
+            if (source.readInt() != ActivityManager.START_RETURN_INTENT_TO_CALLER) {
+                z2 = false;
+            }
+            this.infront = z2;/*end*/
         }
 
         public static final Creator<StackInfo> CREATOR = new Creator<StackInfo>() {

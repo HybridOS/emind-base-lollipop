@@ -16,6 +16,7 @@
 
 package android.app;
 
+import android.app.ActivityManager.ITaskStateListenerCallback;/**add by xiezhongtian*/
 import android.app.ActivityManager.RunningTaskInfo;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.ActivityManager.StackInfo;
@@ -101,6 +102,9 @@ public interface IActivityManager extends IInterface {
             IIntentReceiver receiver, IntentFilter filter,
             String requiredPermission, int userId) throws RemoteException;
     public void unregisterReceiver(IIntentReceiver receiver) throws RemoteException;
+    /*add by xiezhongtian*/
+    public void registerTaskListener(ITaskStateListenerCallback iTaskStateListenerCallback) throws RemoteException;
+
     public int broadcastIntent(IApplicationThread caller, Intent intent,
             String resolvedType, IIntentReceiver resultTo, int resultCode,
             String resultData, Bundle map, String requiredPermission,
@@ -125,6 +129,11 @@ public interface IActivityManager extends IInterface {
     public List<RunningTaskInfo> getTasks(int maxNum, int flags) throws RemoteException;
     public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum,
             int flags, int userId) throws RemoteException;
+    /*add by xiezhongtian*/
+    public List<ActivityManager.RecentTaskInfo> getRecentTasks(int [] iArr,
+            int flags, int userId) throws RemoteException;
+    public List<ActivityManager.RecentTaskInfo> getRecentRunningTasks(int maxNum) throws RemoteException;
+
     public ActivityManager.TaskThumbnail getTaskThumbnail(int taskId) throws RemoteException;
     public List<RunningServiceInfo> getServices(int maxNum, int flags) throws RemoteException;
     public List<ActivityManager.ProcessErrorStateInfo> getProcessesInErrorState()
@@ -132,6 +141,8 @@ public interface IActivityManager extends IInterface {
     public void moveTaskToFront(int task, int flags, Bundle options) throws RemoteException;
     public void moveTaskToBack(int task) throws RemoteException;
     public boolean moveActivityTaskToBack(IBinder token, boolean nonRoot) throws RemoteException;
+    /*add by xiezhongtian*/
+    public boolean moveAppWindow(IBinder iBinder, int i, int i2) throws RemoteException;/*end*/
     public void moveTaskBackwards(int task) throws RemoteException;
     public void moveTaskToStack(int taskId, int stackId, boolean toTop) throws RemoteException;
     public void resizeStack(int stackId, Rect bounds) throws RemoteException;
@@ -179,6 +190,9 @@ public interface IActivityManager extends IInterface {
     public boolean bindBackupAgent(ApplicationInfo appInfo, int backupRestoreMode)
             throws RemoteException;
     public void clearPendingBackup() throws RemoteException;
+    /*add by xiezhongtian*/
+    public boolean closeActivityTask(IBinder iBinder) throws RemoteException;
+
     public void backupAgentCreated(String packageName, IBinder agent) throws RemoteException;
     public void unbindBackupAgent(ApplicationInfo appInfo) throws RemoteException;
     public void killApplicationProcess(String processName, int uid) throws RemoteException;
@@ -195,6 +209,9 @@ public interface IActivityManager extends IInterface {
     public void setRequestedOrientation(IBinder token,
             int requestedOrientation) throws RemoteException;
     public int getRequestedOrientation(IBinder token) throws RemoteException;
+    
+    /*add by xiezhongtian*/
+    Rect getRestoredAppWindowSize(String str) throws RemoteException;
 
     public ComponentName getActivityClassForToken(IBinder token) throws RemoteException;
     public String getPackageForToken(IBinder token) throws RemoteException;
@@ -255,10 +272,18 @@ public interface IActivityManager extends IInterface {
         String packageName, boolean waitForDebugger, boolean persistent)
         throws RemoteException;
     public void setAlwaysFinish(boolean enabled) throws RemoteException;
+  
+    /*add by xiezhongtian*/
+    public void setAppFullScreen(IBinder iBinder, boolean z) throws RemoteException;    
+    public void setAppTitle(IBinder iBinder, String str) throws RemoteException;/*end*/
+
     public void setActivityController(IActivityController watcher)
         throws RemoteException;
 
     public void enterSafeMode() throws RemoteException;
+     
+    /*add by xiezhongtian*/
+    public void exitCurrentFocusedApp() throws RemoteException;/*end*/
     
     public void noteWakeupAlarm(IIntentSender sender, int sourceUid, String sourcePkg)
             throws RemoteException;
@@ -370,6 +395,8 @@ public interface IActivityManager extends IInterface {
 
     // Multi-user APIs
     public boolean switchUser(int userid) throws RemoteException;
+    /*add by xiezhongtian*/
+    public boolean switchSystemAppWindowMode(int i) throws RemoteException;
     public boolean startUserInBackground(int userid) throws RemoteException;
     public int stopUser(int userid, IStopUserCallback callback) throws RemoteException;
     public UserInfo getCurrentUser() throws RemoteException;
@@ -398,7 +425,7 @@ public interface IActivityManager extends IInterface {
     //[emindsoft]Add by xiezhongtian for compile err as below:
     //"indowFrameView.java:158: 错误: 找不到符号 ActivityManagerNative.getDefault().showResizingFrame(r);"
 
-    //public void showResizingFrame(Rect rect) throws RemoteException; 
+    public abstract void showResizingFrame(Rect rect) throws RemoteException; 
 
     public void keyguardWaitingForActivityDrawn() throws RemoteException;
 
@@ -427,6 +454,11 @@ public interface IActivityManager extends IInterface {
 
     public boolean launchAssistIntent(Intent intent, int requestType, String hint, int userHandle)
             throws RemoteException;
+
+    /*add by xiezhongtian*/
+    public boolean launchPhoenixHomeFromHotKey() throws RemoteException;
+    public boolean maximizeOrRestoreAppWindow(IBinder iBinder, boolean z) throws RemoteException;
+    public void hideResizingFrame() throws RemoteException;/*end*/
 
     public void killUid(int uid, String reason) throws RemoteException;
 
@@ -467,6 +499,8 @@ public interface IActivityManager extends IInterface {
             throws RemoteException;
 
     public boolean requestVisibleBehind(IBinder token, boolean visible) throws RemoteException;
+    /*add by xiezhongtian for some interface*/
+    public boolean resizeAppWindow(IBinder iBinder, Rect rect) throws RemoteException;
     public boolean isBackgroundVisibleBehind(IBinder token) throws RemoteException;
     public void backgroundResourcesReleased(IBinder token) throws RemoteException;
 
@@ -618,6 +652,8 @@ public interface IActivityManager extends IInterface {
     int ACTIVITY_RESUMED_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+38;
     int SET_DEBUG_APP_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+41;
     int SET_ALWAYS_FINISH_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+42;
+    int SET_APP_FULLSCREEN_TRANSACTION = 303;/*add by xiezhongtian*/
+    int SET_APP_TITLE_TRANSACTION = 308;/*end*/
     int START_INSTRUMENTATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+43;
     int FINISH_INSTRUMENTATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+44;
     int GET_CONFIGURATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+45;
@@ -641,15 +677,18 @@ public interface IActivityManager extends IInterface {
     int CANCEL_INTENT_SENDER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+63;
     int GET_PACKAGE_FOR_INTENT_SENDER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+64;
     int ENTER_SAFE_MODE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+65;
+    int EXIT_CURRENT_FOCUS_APP_TRANSACTION = 304;
     int START_NEXT_MATCHING_ACTIVITY_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+66;
     int NOTE_WAKEUP_ALARM_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+67;
     int REMOVE_CONTENT_PROVIDER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+68;
     int SET_REQUESTED_ORIENTATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+69;
     int GET_REQUESTED_ORIENTATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+70;
+    int GET_RESTORED_APP_WINDOW_SIZE_TRANSACTION = 307;/*add by xiezhongtian*/
     int UNBIND_FINISHED_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+71;
     int SET_PROCESS_FOREGROUND_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+72;
     int SET_SERVICE_FOREGROUND_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+73;
     int MOVE_ACTIVITY_TASK_TO_BACK_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+74;
+    int MOVE_APP_WINDOW_TRANSACTION = 301;/*add by xiezhongtian*/
     int GET_MEMORY_INFO_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+75;
     int GET_PROCESSES_IN_ERROR_STATE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+76;
     int CLEAR_APP_DATA_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+77;
@@ -690,6 +729,8 @@ public interface IActivityManager extends IInterface {
     int IS_TOP_ACTIVITY_IMMERSIVE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+112;
     int CRASH_APPLICATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+113;
     int GET_PROVIDER_MIME_TYPE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+114;
+    int GET_RECENET_RUNNING_TASKS = 315;/*add by xiezhongtian*/
+    int GET_RECENTS_TASKSINFO_TRANSACTION = 309;/*end*/
     int NEW_URI_PERMISSION_OWNER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+115;
     int GRANT_URI_PERMISSION_FROM_OWNER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+116;
     int REVOKE_URI_PERMISSION_FROM_OWNER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+117;
@@ -713,6 +754,8 @@ public interface IActivityManager extends IInterface {
     int UPDATE_PERSISTENT_CONFIGURATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+135;
     int GET_PROCESS_PSS_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+136;
     int SHOW_BOOT_MESSAGE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+137;
+    int SHOW_RESIZING_FRAME_TRANSACTION = 313;/*add by xiezhongtian*/
+    int HIDE_RESIZING_FRAME_TRANSACTION = 314;/*end*/
     int KILL_ALL_BACKGROUND_PROCESSES_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+139;
     int GET_CONTENT_PROVIDER_EXTERNAL_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+140;
     int REMOVE_CONTENT_PROVIDER_EXTERNAL_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+141;
@@ -728,12 +771,14 @@ public interface IActivityManager extends IInterface {
     int IS_INTENT_SENDER_AN_ACTIVITY_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+151;
     int START_ACTIVITY_AS_USER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+152;
     int STOP_USER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+153;
+    int SWITCH_SYSTEM_APP_WINDOW_MODE_TRANSACTION = 311;/*add by xiezhongtian*/
     int REGISTER_USER_SWITCH_OBSERVER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+154;
     int UNREGISTER_USER_SWITCH_OBSERVER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+155;
     int GET_RUNNING_USER_IDS_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+156;
     int REQUEST_BUG_REPORT_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+157;
     int INPUT_DISPATCHING_TIMED_OUT_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+158;
     int CLEAR_PENDING_BACKUP_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+159;
+    int CLOSE_ACTIVITY_TASK_TRANSACTION = 310; /*add by xiezhongtian*/
     int GET_INTENT_FOR_INTENT_SENDER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+160;
     int GET_ASSIST_CONTEXT_EXTRAS_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+161;
     int REPORT_ASSIST_CONTEXT_EXTRAS_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+162;
@@ -779,6 +824,7 @@ public interface IActivityManager extends IInterface {
     int FINISH_VOICE_TASK_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+223;
     int IS_TOP_OF_TASK_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+224;
     int REQUEST_VISIBLE_BEHIND_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+225;
+    int RESIZE_APP_WINDOW_TRANSACTION = 302;/*add by xiezhongtian*/
     int IS_BACKGROUND_VISIBLE_BEHIND_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+226;
     int BACKGROUND_RESOURCES_RELEASED_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+227;
     int NOTIFY_LAUNCH_TASK_BEHIND_COMPLETE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+228;
@@ -793,8 +839,11 @@ public interface IActivityManager extends IInterface {
     int BOOT_ANIMATION_COMPLETE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+237;
     int GET_TASK_DESCRIPTION_ICON_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+238;
     int LAUNCH_ASSIST_INTENT_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+239;
+    int LAUNCH_HOME_FROM_HOTKEY_TRANSACTION = 305;
+    int MAXIMIZE_RESTORE_APP_WINDOW_TRANSACTION = 312;
     int START_IN_PLACE_ANIMATION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+240;
     int CHECK_PERMISSION_WITH_TOKEN_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+241;
     int REGISTER_TASK_STACK_LISTENER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+242;
+    int REGISTER_TASK_STATE_LISTENER_TRANSACTION = 306;
     int SYSTEM_BACKUP_RESTORED = IBinder.FIRST_CALL_TRANSACTION+243;
 }

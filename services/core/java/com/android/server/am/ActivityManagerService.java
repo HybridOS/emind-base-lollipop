@@ -99,6 +99,7 @@ import org.xmlpull.v1.XmlSerializer;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.ActivityManager.ITaskStateListenerCallback;/*add by xiezhongtian*/
 import android.app.ActivityManager.RunningTaskInfo;
 import android.app.ActivityManager.StackInfo;
 import android.app.ActivityManagerInternal;
@@ -155,6 +156,7 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
+import android.content.res.MultiWindowCompatibility;/*add by xiezhongtian*/
 import android.net.Proxy;
 import android.net.ProxyInfo;
 import android.net.Uri;
@@ -268,7 +270,7 @@ public final class ActivityManagerService extends ActivityManagerNative
     static final boolean DEBUG_SERVICE_EXECUTING = localLOGV || false;
     static final boolean DEBUG_STACK = localLOGV || false;
     static final boolean DEBUG_SWITCH = localLOGV || false;
-    static final boolean DEBUG_TASKS = localLOGV || false;
+    static final boolean DEBUG_TASKS = localLOGV ||true;//fix by xiezhongtian
     static final boolean DEBUG_THUMBNAILS = localLOGV || false;
     static final boolean DEBUG_TRANSITION = localLOGV || false;
     static final boolean DEBUG_URI_PERMISSION = localLOGV || false;
@@ -334,6 +336,9 @@ public final class ActivityManagerService extends ActivityManagerNative
     // The minimum sample duration we will allow before deciding we have
     // enough data on CPU usage to start killing things.
     static final int CPU_MIN_CHECK_DURATION = (DEBUG_POWER_QUICK ? 1 : 5) * 60*1000;
+  
+    /*add by xiezhongtian for filemanager cz*/
+    public static final String CZHomePackageName = "com.chaozhuo.filemanager";
 
     // How long we allow a receiver to run before giving up on it.
     static final int BROADCAST_FG_TIMEOUT = 10*1000;
@@ -373,6 +378,13 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     static final int LAST_PREBOOT_DELIVERED_FILE_VERSION = 10000;
 
+    /*add by xiezhongtian for listener notification*/
+    static final int NOTIFY_FOCUSED_TASK_CHANGE_LISTENERS_MSG = 51;
+    static final int NOTIFY_TASK_ACTIVITY_WINDOW_VISIBLE = 54;
+    static final int NOTIFY_TASK_CLOSE_LISTENERS_MSG = 52;
+    static final int NOTIFY_TASK_CREATE_LISTENERS_MSG = 50;
+    static final int NOTIFY_TASK_PROCESS_STARTED_MSG = 53;/*end*/
+ 
     // Delay in notifying task stack change listeners (in millis)
     static final int NOTIFY_TASK_STACK_CHANGE_LISTENERS_DELAY = 1000;
 
@@ -387,6 +399,9 @@ public final class ActivityManagerService extends ActivityManagerNative
     /** Task stack change listeners. */
     private RemoteCallbackList<ITaskStackListener> mTaskStackListeners =
             new RemoteCallbackList<ITaskStackListener>();
+
+    /**add by xiezhongtian for ITaskStateListenerCallback */
+    private RemoteCallbackList<ITaskStateListenerCallback> mTaskStateListeners = new RemoteCallbackList();
 
     public IntentFirewall mIntentFirewall;
 
@@ -625,6 +640,9 @@ public final class ActivityManagerService extends ActivityManagerNative
      */
     ProcessRecord mHomeProcess;
 
+    /*add by xiezhongtian for whilte list*/
+    private ArrayList<String> mHomeWhiteList;   
+
     /**
      * This is the process holding the activity the user last visited that
      * is in a different process from the one they are currently in.
@@ -662,6 +680,8 @@ public final class ActivityManagerService extends ActivityManagerNative
      */
     Object mCurUserSwitchCallback;
 
+    /*add by xiezhongtian for some reason*/
+    private String mCurrentPackageName;
     /**
      * Packages that the user has asked to have run in screen size
      * compatibility mode instead of filling the screen.
@@ -928,6 +948,9 @@ public final class ActivityManagerService extends ActivityManagerNative
      */
     int mConfigurationSeq = 0;
 
+    /*add by xiezhongtian for some reason*/
+    //private static long sWinQElapsetime = 2000;
+
     /**
      * Hardware-reported OpenGLES version.
      */
@@ -988,6 +1011,9 @@ public final class ActivityManagerService extends ActivityManagerNative
      */
     long mLastPowerCheckUptime;
 
+    /*add by xiezhongtian*/
+    private long mLastTimeWinQ;
+
     /**
      * Set while we are wanting to sleep, to prevent any
      * activities from being started/resumed.
@@ -1027,6 +1053,9 @@ public final class ActivityManagerService extends ActivityManagerNative
      * Current sequence id for process LRU updating.
      */
     int mLruSeq = 0;
+
+    /*add by xiezhongtian for mMultiWindowMgr*/
+    MultiWindowManager mMultiWindowMgr;
 
     /**
      * Keep track of the non-cached/empty process we last found, to help
@@ -1102,6 +1131,9 @@ public final class ActivityManagerService extends ActivityManagerNative
      * it, to increase the ANR timeouts in that case.
      */
     boolean mDidDexOpt;
+
+    /*add by xiezhongtian for */
+    private boolean mRunningVoice = VALIDATE_TOKENS;
 
     /**
      * Set if the systemServer made a call to enterSafeMode.
@@ -1185,6 +1217,9 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     int mProcessLimit = ProcessList.MAX_CACHED_APPS;
     int mProcessLimitOverride = -1;
+
+    /*add by xiezhongtian*/
+    private int mWinQClickCount;
 
     WindowManagerService mWindowManager;
 
@@ -1937,6 +1972,7 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     public void setWindowManager(WindowManagerService wm) {
         mWindowManager = wm;
+        this.mWindowManager.mSystemAppWindowMode = this.mMultiWindowMgr.getSystemAppWindowMode();
         mStackSupervisor.setWindowManager(wm);
     }
 
@@ -2108,6 +2144,10 @@ public final class ActivityManagerService extends ActivityManagerNative
 
         mConfiguration.setToDefaults();
         mConfiguration.locale = Locale.getDefault();
+        /**add by xiezhongtian*/
+        this.mMultiWindowMgr = new MultiWindowManager(this);
+        this.mRestoringStackIds = new ArrayList();
+        this.mConfiguration.smallestScreenWidthDp = this.mMultiWindowMgr.getSystemAppWindowMode();/**end*/
 
         mConfigurationSeq = mConfiguration.seq = 1;
         mProcessCpuTracker.init();
@@ -2149,6 +2189,9 @@ public final class ActivityManagerService extends ActivityManagerNative
 
         Watchdog.getInstance().addMonitor(this);
         Watchdog.getInstance().addThread(mHandler);
+        /**add by xiezhongtian*/
+        CZAutoRunController.newInstance(this, this.mContext);
+        CZMemoryPolicy.newInstance(this);/**end*/
     }
 
     public void setSystemServiceManager(SystemServiceManager mgr) {
@@ -2387,15 +2430,19 @@ public final class ActivityManagerService extends ActivityManagerNative
     @Override
     public void setFocusedStack(int stackId) {
         if (DEBUG_FOCUS) Slog.d(TAG, "setFocusedStack: stackId=" + stackId);
+        long origId = Binder.clearCallingIdentity();/**add by xiezhongtian*/
         synchronized (ActivityManagerService.this) {
             ActivityStack stack = mStackSupervisor.getStack(stackId);
-            if (stack != null) {
+            //if (stack != null) {
+            if (!(stack == null || this.mStackSupervisor.getFocusedStack() == stack)) {/**fix by xiezhongtian*/
                 ActivityRecord r = stack.topRunningActivityLocked(null);
                 if (r != null) {
                     setFocusedActivityLocked(r, "setFocusedStack");
+                    moveTaskToFront(r.task.taskId, MY_PID, null);/**add  by xiezhongtian*/
                 }
             }
         }
+        Binder.restoreCallingIdentity(origId);/**add by xiezhongtian*/
     }
 
     /** Sets the task stack listener that gets callbacks when a task stack changes. */
@@ -3105,6 +3152,19 @@ public final class ActivityManagerService extends ActivityManagerNative
             }
         }
     }
+    
+    /**add by xiezhongtian*/
+    public boolean isPackageInHomeWhteList(String packageName) {
+        if (this.mHomeWhiteList == null) {
+            this.mHomeWhiteList = new ArrayList();
+            this.mHomeWhiteList.add(CZHomePackageName);
+            this.mHomeWhiteList.add("com.chaozhuo.setupwizard");
+            this.mHomeWhiteList.add("com.android.provision");
+            this.mHomeWhiteList.add("com.android.managedprovisioning");
+        }
+        return (packageName == null || !this.mHomeWhiteList.contains(packageName)) ? VALIDATE_TOKENS : MONITOR_CPU_USAGE;
+    }/**end*/
+
 
     Intent getHomeIntent() {
         Intent intent = new Intent(mTopAction, mTopData != null ? Uri.parse(mTopData) : null);
@@ -5274,7 +5334,12 @@ public final class ActivityManagerService extends ActivityManagerNative
     }
 
     @Override
-    public void forceStopPackage(final String packageName, int userId) {
+    public void forceStopPackage(String packageName, int userId) {
+        forceStopPackage(packageName, userId, MONITOR_CPU_USAGE);
+    }
+    
+    void forceStopPackage(String packageName, int userId, boolean commitPMSettings) {
+        if (checkCallingPermission("android.permission.FORCE_STOP_PACKAGES") != 0) {
         if (checkCallingPermission(android.Manifest.permission.FORCE_STOP_PACKAGES)
                 != PackageManager.PERMISSION_GRANTED) {
             String msg = "Permission Denial: forceStopPackage() from pid="
@@ -5303,12 +5368,14 @@ public final class ActivityManagerService extends ActivityManagerNative
                         Slog.w(TAG, "Invalid packageName: " + packageName);
                         continue;
                     }
-                    try {
-                        pm.setPackageStoppedState(packageName, true, user);
-                    } catch (RemoteException e) {
-                    } catch (IllegalArgumentException e) {
-                        Slog.w(TAG, "Failed trying to unstop package "
-                                + packageName + ": " + e);
+                    if (commitPMSettings) {/**add by xiezhongtian*/
+                      try {
+                          pm.setPackageStoppedState(packageName, true, user);
+                      } catch (RemoteException e) {
+                      } catch (IllegalArgumentException e) {
+                          Slog.w(TAG, "Failed trying to unstop package "
+                                  + packageName + ": " + e);
+                      }
                     }
                     if (isUserRunningLocked(user, false)) {
                         forceStopPackageLocked(packageName, pkgUid, "from pid " + callingPid);
@@ -5985,6 +6052,7 @@ public final class ActivityManagerService extends ActivityManagerNative
             ApplicationInfo appInfo = app.instrumentationInfo != null
                     ? app.instrumentationInfo : app.info;
             app.compat = compatibilityInfoForPackageLocked(appInfo);
+            app.mwCompat = new MultiWindowCompatibility(this.mMultiWindowMgr.getAppCompatMode(processName));/**add by xiezhongtian*/
             if (profileFd != null) {
                 profileFd = profileFd.dup();
             }
@@ -6043,7 +6111,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         }
 
         // Check if a next-broadcast receiver is in this process...
-        if (!badApp && isPendingBroadcastProcessLocked(pid)) {
+        if (!badApp && isPendingBroadcastProcessLocked(pid)) {  /**?????????????????maybe there should be fix*/
             try {
                 didSomething |= sendPendingBroadcastsLocked(app);
             } catch (Exception e) {
@@ -6054,7 +6122,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         }
 
         // Check whether the next backup agent is in this process...
-        if (!badApp && mBackupTarget != null && mBackupTarget.appInfo.uid == app.uid) {
+        if (!badApp && mBackupTarget != null && mBackupTarget.appInfo.uid == app.uid) { /**?????????????????maybe there should be fix*/
             if (DEBUG_BACKUP) Slog.v(TAG, "New app is backup target, launching agent for " + app);
             ensurePackageDexOpt(mBackupTarget.appInfo.packageName);
             try {
@@ -6251,6 +6319,12 @@ public final class ActivityManagerService extends ActivityManagerNative
                 scheduleStartProfilesLocked();
             }
         }
+        else/**add by xiezhongtian*/
+        {
+          CZAutoRunController.getInstance().onBootFinished();
+          CZMemoryPolicy.getInstance().onBootFinished();
+          CZOnlineConfigManager.getInstance().init(this.mContext);
+          return;
     }
 
     @Override
@@ -8132,6 +8206,39 @@ public final class ActivityManagerService extends ActivityManagerNative
         return allowed;
     }
 
+  /**add by xiezhongtian to get recent runing tasks*/
+  public List<ActivityManager.RecentTaskInfo> getRecentRunningTasks(int paramInt)
+  {
+    int i = Binder.getCallingUid();
+    for (;;)
+    {
+      int j;
+      try
+      {
+        ArrayList localArrayList1 = this.mStackSupervisor.getTasksLocked(i);
+        j = localArrayList1.size();
+        if (paramInt < j)
+        {
+          i = paramInt;
+          ArrayList localArrayList2 = new ArrayList(i);
+          int k = 0;
+          i = paramInt;
+          paramInt = k;
+          if ((paramInt < j) && (i > 0))
+          {
+            localArrayList2.add(createRecentTaskInfoFromTaskRecord((TaskRecord)localArrayList1.get(paramInt)));
+            i -= 1;
+            paramInt += 1;
+            continue;
+          }
+          return localArrayList2;
+        }
+      }
+      finally {}
+      i = j;
+    }
+  }
+ 
     @Override
     public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum, int flags, int userId) {
         final int callingUid = Binder.getCallingUid();
@@ -8217,6 +8324,7 @@ public final class ActivityManagerService extends ActivityManagerNative
             return res;
         }
     }
+
 
     TaskRecord recentTaskForIdLocked(int id) {
         final int N = mRecentTasks.size();
@@ -8498,12 +8606,21 @@ public final class ActivityManagerService extends ActivityManagerNative
             enforceCallingPermission(android.Manifest.permission.REMOVE_TASKS,
                     "removeTask()");
             long ident = Binder.clearCallingIdentity();
+            ret = VALIDATE_TOKENS;/**add by xiezhongtian fir switch multiwindow mode*/
             try {
-                return removeTaskByIdLocked(taskId, true);
+                ret = removeTaskByIdLocked(taskId, MONITOR_CPU_USAGE);
+                if (ret && isMultiWindowMode()) {
+                    TaskRecord tr = this.mStackSupervisor.anyTaskForIdLocked(taskId);
+                    if (!(tr == null || tr.stack == null || tr.mActivities.size() == 0)) {
+                        StackInfo info = getStackInfo(tr.stack.mStackId);
+                        this.mMultiWindowMgr.storeWindowPos(((ActivityRecord) tr.mActivities.get(MY_PID)).processName, info.bounds);
+                    }
+                }/**xiezhongtian*/
             } finally {
                 Binder.restoreCallingIdentity(ident);
             }
         }
+        return ret;/**end*/
     }
 
     /**
@@ -8542,6 +8659,7 @@ public final class ActivityManagerService extends ActivityManagerNative
             if (prev != null && prev.isRecentsActivity()) {
                 task.setTaskToReturnTo(ActivityRecord.RECENTS_ACTIVITY_TYPE);
             }
+            setFocusedActivityLocked(task.topRunningActivityLocked(null), "moveTaskToFront");/**add by xiezhongtian*/
             mStackSupervisor.findTaskToMoveToFrontLocked(task, flags, options, "moveTaskToFront");
         } finally {
             Binder.restoreCallingIdentity(origId);
@@ -8713,8 +8831,8 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     @Override
     public List<StackInfo> getAllStackInfos() {
-        enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
-                "getAllStackInfos()");
+        /**enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
+                "getAllStackInfos()");  maybe some permission problem*/
         long ident = Binder.clearCallingIdentity();
         try {
             synchronized (this) {
@@ -10074,6 +10192,38 @@ public final class ActivityManagerService extends ActivityManagerNative
         Message nmsg = mHandler.obtainMessage(NOTIFY_TASK_STACK_CHANGE_LISTENERS_MSG);
         mHandler.sendMessageDelayed(nmsg, NOTIFY_TASK_STACK_CHANGE_LISTENERS_DELAY);
     }
+    
+   /**add by xiezhongtian for notify some message*/
+    void notifyTaskCreateLocked(RecentTaskInfo info) {
+        Message nmsg = this.mHandler.obtainMessage(NOTIFY_TASK_CREATE_LISTENERS_MSG);
+        nmsg.obj = info;
+        this.mHandler.sendMessage(nmsg);
+    }
+
+    void notifyFocusedTaskChangedLocked(RecentTaskInfo info) {
+        this.mHandler.removeMessages(NOTIFY_FOCUSED_TASK_CHANGE_LISTENERS_MSG);
+        Message nmsg = this.mHandler.obtainMessage(NOTIFY_FOCUSED_TASK_CHANGE_LISTENERS_MSG);
+        nmsg.obj = info;
+        this.mHandler.sendMessage(nmsg);
+    }
+
+    void notifyTaskClosedLocked(RecentTaskInfo info) {
+        Message nmsg = this.mHandler.obtainMessage(NOTIFY_TASK_CLOSE_LISTENERS_MSG);
+        nmsg.obj = info;
+        this.mHandler.sendMessage(nmsg);
+    }
+
+    void notifyTaskProcessStarted(RecentTaskInfo info) {
+        Message nmsg = this.mHandler.obtainMessage(NOTIFY_TASK_PROCESS_STARTED_MSG);
+        nmsg.obj = info;
+        this.mHandler.sendMessage(nmsg);
+    }
+
+    void notifyTaskActivityWindowVisible(RecentTaskInfo info) {
+        Message nmsg = this.mHandler.obtainMessage(NOTIFY_TASK_ACTIVITY_WINDOW_VISIBLE);
+        nmsg.obj = info;
+        this.mHandler.sendMessage(nmsg);
+    }/**end*/
 
     @Override
     public boolean shutdown(int timeout) {
@@ -10558,6 +10708,8 @@ public final class ActivityManagerService extends ActivityManagerNative
     @Override
     public boolean convertFromTranslucent(IBinder token) {
         final long origId = Binder.clearCallingIdentity();
+        return VALIDATE_TOKENS;/**add and fixed by xiezhongtian/
+       /*
         try {
             synchronized (this) {
                 final ActivityRecord r = ActivityRecord.isInStackLocked(token);
@@ -10574,7 +10726,7 @@ public final class ActivityManagerService extends ActivityManagerNative
             }
         } finally {
             Binder.restoreCallingIdentity(origId);
-        }
+        }*/
     }
 
     @Override
@@ -16657,6 +16809,7 @@ public final class ActivityManagerService extends ActivityManagerNative
 
             if (mWindowManager != null) {
                 mProcessList.applyDisplaySize(mWindowManager);
+                CZMemoryPolicy.getInstance().appDisplaySize(this.mWindowManager);/**add by xiezhongtian*/
             }
 
             final long origId = Binder.clearCallingIdentity();
@@ -16702,6 +16855,9 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
                 newConfig.seq = mConfigurationSeq;
                 mConfiguration = newConfig;
+                if ((changes & MAX_PERSISTED_URI_GRANTS) != 0 && isMultiWindowMode()) {/**add by xiezhongtian*/
+                    this.mMultiWindowMgr.handleOrientationChanged();
+                }/**end*/
                 Slog.i(TAG, "Config changes=" + Integer.toHexString(changes) + " " + newConfig);
                 mUsageStatsService.reportConfigurationChange(newConfig, mCurrentUserId);
                 //mUsageStatsService.noteStartConfig(newConfig);
@@ -19728,13 +19884,233 @@ public final class ActivityManagerService extends ActivityManagerNative
             }
         }
 
+    /**add by xiezhongtian to for task*/
+    RecentTaskInfo getTaskInfo(TaskRecord tr) {
+        RecentTaskInfo rti = new RecentTaskInfo();
+        rti.id = tr.taskId;
+        rti.persistentId = tr.taskId;
+        rti.baseIntent = new Intent(tr.intent != null ? tr.intent : tr.affinityIntent);
+        rti.origActivity = tr.origActivity;
+        rti.description = tr.lastDescription;
+        rti.stackId = tr.stack.mStackId;
+        return rti;
+    }
+
+    public boolean moveAppWindow(IBinder binder, int x, int y) {
+        if (!isMultiWindowMode()) {
+            return VALIDATE_TOKENS;
+        }
+        ActivityRecord record;
+        long ident = Binder.clearCallingIdentity();
+        synchronized (this) {
+            record = ActivityRecord.isInStackLocked(binder);
+            if (record == null) {
+                throw new IllegalArgumentException();
+            }
+        }
+        boolean succeed = this.mMultiWindowMgr.moveAppWindow(record, x, y);
+        Binder.restoreCallingIdentity(ident);
+        return succeed;
+    }
+
+    public boolean maximizeOrRestoreAppWindow(IBinder token, boolean max) {
+        if (!isMultiWindowMode()) {
+            return VALIDATE_TOKENS;
+        }
+        ActivityRecord record;
+        long ident = Binder.clearCallingIdentity();
+        synchronized (this) {
+            record = ActivityRecord.isInStackLocked(token);
+            if (record == null) {
+                throw new IllegalArgumentException();
+            }
+        }
+        boolean succeed = this.mMultiWindowMgr.maximizeAppWindow(record, max);
+        Binder.restoreCallingIdentity(ident);
+        return succeed;
+    }
+
+    public boolean resizeAppWindow(IBinder token, Rect r) {
+        if (!isMultiWindowMode()) {
+            return VALIDATE_TOKENS;
+        }
+        ActivityRecord record;
+        long ident = Binder.clearCallingIdentity();
+        Slog.i(TAG, "resizeAppWindow Rect:" + r.toString());
+        synchronized (this) {
+            record = ActivityRecord.isInStackLocked(token);
+            if (record == null) {
+                throw new IllegalArgumentException();
+            }
+        }
+        boolean ret = this.mMultiWindowMgr.resizeAppWindow(record, r);
+        Binder.restoreCallingIdentity(ident);
+        return ret;
+    }
+
+    public boolean launchPhoenixHomeFromHotKey() {
+        boolean launchHome = VALIDATE_TOKENS;
+        List<StackInfo> stacks = getAllStackInfos();
+        if (stacks.size() < SHOW_NOT_RESPONDING_MSG) {
+            return MONITOR_CPU_USAGE;
+        }
+        for (StackInfo sb : stacks) {
+            if (sb.infront && sb.stackId != 0) {
+                launchHome = MONITOR_CPU_USAGE;
+                break;
+            }
+        }
+        int next;
+        if (launchHome) {
+            this.mRestoringStackIds.clear();
+            for (StackInfo sb2 : stacks) {
+                if (sb2.infront && sb2.stackId != 0) {
+                    for (next = sb2.taskIds.length - 1; next >= 0; next--) {
+                        moveTaskToBack(sb2.taskIds[next]);
+                    }
+                    this.mRestoringStackIds.add(Integer.valueOf(sb2.stackId));
+                }
+            }
+        } else {
+            for (int i = this.mRestoringStackIds.size() - 1; i >= 0; i--) {
+                StackInfo info = getStackInfo(((Integer) this.mRestoringStackIds.get(i)).intValue());
+                for (next = info.taskIds.length - 1; next >= 0; next--) {
+                    moveTaskToFront(info.taskIds[next], MY_PID, null);
+                }
+            }
+        }
+        return VALIDATE_TOKENS;
+    }
+
+    public void exitCurrentFocusedApp() {
+        long ident = Binder.clearCallingIdentity();
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - this.mLastTimeWinQ >= sWinQElapsetime) {
+            this.mWinQClickCount = MY_PID;
+            this.mCurrentPackageName = null;
+        } else if (this.mWinQClickCount > 0) {
+            this.mWinQClickCount += SHOW_ERROR_MSG;
+            if (this.mWinQClickCount == SHOW_FACTORY_ERROR_MSG && this.mCurrentPackageName != null && !this.mCurrentPackageName.equalsIgnoreCase(CZHomePackageName)) {
+                forceStopPackage(this.mCurrentPackageName, MY_PID);
+                return;
+            }
+            return;
+        }
+        this.mLastTimeWinQ = currentTime;
+        ActivityStack stack = getFocusedStack();
+        if (!stack.isHomeStack()) {
+            int currentStackId = stack.mStackId;
+            ActivityRecord topActivity = stack.topActivity();
+            if (topActivity != null) {
+                removeTask(topActivity.task.taskId);
+                this.mCurrentPackageName = topActivity.packageName;
+            } else {
+                Log.e(TAG, "exitCurrentFocusedApp getTopActivity failed" + stack.toString());
+            }
+            if (this.mCurrentPackageName == null || this.mCurrentPackageName.isEmpty()) {
+                Log.e(TAG, "Exit Current app failed" + stack.toString());
+                return;
+            }
+            this.mWinQClickCount = SHOW_ERROR_MSG;
+            Binder.restoreCallingIdentity(ident);
+        }
+    }
+
+    public boolean closeActivityTask(IBinder token) {
+        long ident = Binder.clearCallingIdentity();
+        int taskId = getTaskForActivity(token, VALIDATE_TOKENS);
+        if (taskId != -1) {
+            removeTask(taskId);
+        }
+        Binder.restoreCallingIdentity(ident);
+        return VALIDATE_TOKENS;
+    }
+
+    public void setAppFullScreen(IBinder token, boolean fullscreen) {
+        synchronized (this) {
+            if (ActivityRecord.isInStackLocked(token) == null) {
+                return;
+            }
+            this.mWindowManager.forceAppFullscreenShow(token, fullscreen);
+        }
+    }
+
+    public void setAppTitle(IBinder token, String title) {
+        synchronized (this) {
+            ActivityRecord r = ActivityRecord.isInStackLocked(token);
+            if (r == null) {
+                throw new IllegalArgumentException();
+            }
+            r.task.lastDescription = title;
+        }
+    }
+
+    public Rect getRestoredAppWindowSize(String pkgName) {
+        return this.mMultiWindowMgr.getRestoredAppWindowPos(pkgName);
+    }
+
+    public List<RecentTaskInfo> getRecentTasks(int[] taskIds, int flags, int userId) {
+        ArrayList<RecentTaskInfo> arrayList;
+        userId = handleIncomingUser(Binder.getCallingPid(), Binder.getCallingUid(), userId, (boolean) VALIDATE_TOKENS, (boolean) MONITOR_CPU_USAGE, "getRecentTasks", null);
+        synchronized (this) {
+            enforceCallingPermission("android.permission.GET_TASKS", "getRecentTasks()");
+            if (checkCallingPermission("android.permission.GET_DETAILED_TASKS") == 0) {
+            }
+            IPackageManager pm = AppGlobals.getPackageManager();
+            int addNum = MY_PID;
+            List<RecentTaskInfo> tasks = getRecentRunningTasks(PROC_START_TIMEOUT_MSG);
+            int N = tasks.size();
+            arrayList = new ArrayList(taskIds.length);
+            for (int i = MY_PID; i < N && addNum < taskIds.length; i += SHOW_ERROR_MSG) {
+                RecentTaskInfo info = (RecentTaskInfo) tasks.get(i);
+                boolean match = VALIDATE_TOKENS;
+                for (int j = MY_PID; j < taskIds.length; j += SHOW_ERROR_MSG) {
+                    if (info.id == taskIds[j]) {
+                        match = MONITOR_CPU_USAGE;
+                        break;
+                    }
+                }
+                if (match) {
+                    arrayList.add(info);
+                    addNum += SHOW_ERROR_MSG;
+                }
+            }
+        }
+        return arrayList;
+    }
+
+    public boolean switchSystemAppWindowMode(int mode) {
+        if (mode == this.mMultiWindowMgr.getSystemAppWindowMode() || (mode != SHOW_NOT_RESPONDING_MSG && mode != SHOW_ERROR_MSG)) {
+            return VALIDATE_TOKENS;
+        }
+        this.mMultiWindowMgr.setSystemAppWindowMode(mode);
+        Configuration config = new Configuration(this.mConfiguration);
+        config.system_mode = this.mMultiWindowMgr.getSystemAppWindowMode();
+        long origId = Binder.clearCallingIdentity();
+        this.mWindowManager.mSystemAppWindowMode = mode;
+        updateConfiguration(config);
+        Binder.restoreCallingIdentity(origId);
+        return MONITOR_CPU_USAGE;
+    }
+
+    boolean isMultiWindowMode() {
+        return this.mConfiguration.system_mode == SHOW_NOT_RESPONDING_MSG ? MONITOR_CPU_USAGE : VALIDATE_TOKENS;
+    }
+
+    public void registerTaskListener(ITaskStateListenerCallback callback) throws RemoteException {
+        synchronized (this) {
+            if (callback != null) {
+                this.mTaskStateListeners.register(callback);
+            }
+        }
+    }
+
     public void showResizingFrame(Rect rect) {
         this.mWindowManager.showResizingFrame(rect);
     }
 
     public void hideResizingFrame() {
         this.mWindowManager.hideResizingFrame();
-    }
+    }/**end*/
 
-    }
 }

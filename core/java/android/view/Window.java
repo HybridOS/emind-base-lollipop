@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Rect;/*add by xiezhongtian*/
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.media.session.MediaController;
@@ -179,16 +180,20 @@ public abstract class Window {
     private TypedArray mWindowStyle;
     private Callback mCallback;
     private OnWindowDismissedCallback mOnWindowDismissedCallback;
+    private OnWindowMovedCallback mOnWindowMovedCallback;/*add by xiezhongtian*/
     private WindowManager mWindowManager;
-    private IBinder mAppToken;
+    /*fix private to public*/
+    public IBinder mAppToken;
     private String mAppName;
     private boolean mHardwareAccelerated;
     private Window mContainer;
     private Window mActiveChild;
     private boolean mIsActive = false;
+    private boolean mIsAppWindow = false;/*add by xiezhongtian*/
     private boolean mHasChildren = false;
     private boolean mCloseOnTouchOutside = false;
     private boolean mSetCloseOnTouchOutside = false;
+    private int mStackId = PROGRESS_VISIBILITY_ON;/*add by xiezhongtian*/
     private int mForcedWindowFlags = 0;
 
     private int mFeatures;
@@ -257,6 +262,11 @@ public abstract class Window {
          * @return boolean Return true if this event was consumed.
          */
         public boolean dispatchTrackballEvent(MotionEvent event);
+
+        /**we add for dispatch window 
+         * add by xiezhongtian
+         */
+        boolean dispatchWindowCloseClicked(boolean z);
 
         /**
          * Called to process generic motion events.  At the very least your
@@ -448,6 +458,13 @@ public abstract class Window {
         public void onWindowDismissed();
     }
 
+    /**add OnWindowMovedCallback for motion event
+     ** add by xiezhongtian
+     */
+    public interface OnWindowMovedCallback {
+        void onWindowMoved(int i, int i2);
+    }
+
     public Window(Context context) {
         mContext = context;
         mFeatures = mLocalFeatures = getDefaultFeatures(context);
@@ -633,6 +650,19 @@ public abstract class Window {
             mOnWindowDismissedCallback.onWindowDismissed();
         }
     }
+
+    /*add by xiezhongtian*/
+    public final void setOnWindowMovedCallback(OnWindowMovedCallback dcb) {
+        this.mOnWindowMovedCallback = dcb;
+    }
+
+    public final void dispatchOnWindowMoved(int newX, int newY) {
+        if (this.mOnWindowMovedCallback != null) {
+            this.mOnWindowMovedCallback.onWindowMoved(newX, newY);
+        }
+    }
+
+
 
     /**
      * Take ownership of this window's surface.  The window's view hierarchy
@@ -1014,6 +1044,12 @@ public abstract class Window {
     public abstract void setContentView(View view);
 
     /**
+     * add addCustomFrameTitleView to let app set itself title;  
+     * Add by xiezhongtian
+     */
+    public abstract void addCustomFrameTitleView(View view);
+
+    /**
      * Set the screen content to an explicit view.  This view is placed
      * directly into the screen's view hierarchy.  It can itself be a complex
      * view hierarchy.
@@ -1205,6 +1241,10 @@ public abstract class Window {
      */
     public abstract void setFeatureInt(int featureId, int value);
 
+    /*add by xiezhongtian*/    
+    public abstract void setFrameHeaderBgDrawable(Drawable drawable);
+
+
     /**
      * Request that key events come to this activity. Use this if your
      * activity has no views with focus, but the activity still wants
@@ -1263,6 +1303,9 @@ public abstract class Window {
      *
      * @return Returns the top-level window decor view.
      */
+    /*now we add DecorRootView for top-level window decor view*/
+    public abstract View getDecorRootView(); /*@end*/
+
     public abstract View getDecorView();
 
     /**
@@ -1372,15 +1415,33 @@ public abstract class Window {
      */
     public abstract boolean isShortcutKey(int keyCode, KeyEvent event);
 
+    /*add by xiezhongtian*/
+    public abstract boolean isWindowMaximized();
+
     /**
      * @see android.app.Activity#setVolumeControlStream(int)
      */
     public abstract void setVolumeControlStream(int streamType);
 
+    /*add by xiezhongtian*/
+    public abstract boolean setWindowFrame(int i);
+
+    public abstract void setWindowFullScreen(boolean z);
+
+    public abstract void setWindowPos(Rect rect);
+    /*end*/
+
+
     /**
      * @see android.app.Activity#getVolumeControlStream()
      */
     public abstract int getVolumeControlStream();
+
+    /**
+     * @see 
+     * add by xiezhongtian
+     */
+    public abstract int getWindowFrameFlags();
 
     /**
      * Sets a {@link MediaController} to send media keys and volume changes to.
@@ -1829,6 +1890,30 @@ public abstract class Window {
      * @attr ref android.R.styleable#Window_windowSharedElementsUseOverlay
      */
     public void setSharedElementsUseOverlay(boolean sharedElementsUseOverlay) { }
+
+    /*Add by xiezhongtian*/
+    public void setStackId(int id) {
+        this.mStackId = id;
+    }
+
+    public void setIsAppWindow(boolean appWindow) {
+        this.mIsAppWindow = appWindow;
+    }
+
+    public boolean isAppWindow() {
+        return this.mIsAppWindow;
+    }
+
+    public int getStackId() {
+        return this.mStackId;
+    }
+
+    public boolean isMWPanel() {
+        if (getWindowStyle().getBoolean(FEATURE_RIGHT_ICON, false) || this.mStackId == 0 || this.mStackId == PROGRESS_VISIBILITY_ON) {
+            return false;
+        }
+        return true;
+    }
 
     /**
      * @return the color of the status bar.

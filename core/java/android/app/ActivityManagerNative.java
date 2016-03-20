@@ -54,6 +54,8 @@ import com.android.internal.app.IVoiceInteractor;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.ActivityManager.ITaskStateListenerCallback;/**add by xiezhongtian*/
+
 /** {@hide} */
 public abstract class ActivityManagerNative extends Binder implements IActivityManager
 {
@@ -5464,6 +5466,221 @@ class ActivityManagerProxy implements IActivityManager
         data.recycle();
         reply.recycle();
     }
+
+    /*add by xiezhongtian for implement IActivityManager*/
+     public boolean moveAppWindow(IBinder token, int x, int y) throws RemoteException {
+        boolean res = false;
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(token);
+        data.writeInt(x);
+        data.writeInt(y);
+        this.mRemote.transact(IActivityManager.MOVE_APP_WINDOW_TRANSACTION, data, reply, 0);
+        reply.readException();
+        if (reply.readInt() != 0) {
+            res = true;
+        }
+        data.recycle();
+        reply.recycle();
+        return res;
+    }
+
+    public boolean resizeAppWindow(IBinder token, Rect r) throws RemoteException {
+        boolean res = false;
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(token);
+        r.writeToParcel(data, 0);
+        this.mRemote.transact(IActivityManager.RESIZE_APP_WINDOW_TRANSACTION, data, reply, 0);
+        reply.readException();
+        if (reply.readInt() != 0) {
+            res = true;
+        }
+        data.recycle();
+        reply.recycle();
+        return res;
+    }
+
+    public boolean launchPhoenixHomeFromHotKey() throws RemoteException {
+        boolean res = false;
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        this.mRemote.transact(IActivityManager.LAUNCH_HOME_FROM_HOTKEY_TRANSACTION, data, reply, 0);
+        reply.readException();
+        if (reply.readInt() != 0) {
+            res = true;
+        }
+        data.recycle();
+        reply.recycle();
+        return res;
+    }
+
+    public void exitCurrentFocusedApp() throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        this.mRemote.transact(IActivityManager.EXIT_CURRENT_FOCUS_APP_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public void registerTaskListener(ITaskStateListenerCallback callback) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(callback.asBinder());
+        this.mRemote.transact(IActivityManager.REGISTER_TASK_STATE_LISTENER_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public boolean closeActivityTask(IBinder token) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(token);
+        this.mRemote.transact(IActivityManager.CLOSE_ACTIVITY_TASK_TRANSACTION, data, reply, 0);
+        reply.readException();
+        boolean[] ret = new boolean[1];
+        reply.readBooleanArray(ret);
+        data.recycle();
+        reply.recycle();
+        return ret[0];
+    }
+
+    public void setAppFullScreen(IBinder token, boolean fullscreen) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(token);
+        data.writeInt(fullscreen ? 1 : 0);
+        this.mRemote.transact(IActivityManager.SET_APP_FULLSCREEN_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public void setAppTitle(IBinder token, String title) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(token);
+        data.writeString(title);
+        this.mRemote.transact(IActivityManager.SET_APP_TITLE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public Rect getRestoredAppWindowSize(String pkgName) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeString(pkgName);
+        this.mRemote.transact(IActivityManager.GET_RESTORED_APP_WINDOW_SIZE_TRANSACTION, data, reply, 0);
+        Rect screen = new Rect();
+        screen.readFromParcel(reply);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+        return screen;
+    }
+
+    public List<ActivityManager.RecentTaskInfo> getRecentTasks(int[] taskIds, int flags, int userId) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeIntArray(taskIds);
+        data.writeInt(flags);
+        data.writeInt(userId);
+        this.mRemote.transact(IActivityManager.GET_RECENTS_TASKSINFO_TRANSACTION, data, reply, 0);
+        reply.readException();
+        ArrayList<ActivityManager.RecentTaskInfo> list = reply.createTypedArrayList(ActivityManager.RecentTaskInfo.CREATOR);
+        data.recycle();
+        reply.recycle();
+        return list;
+    }
+
+    public boolean switchSystemAppWindowMode(int mode) throws RemoteException {
+        boolean res = false;
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(mode);
+        this.mRemote.transact(IActivityManager.SWITCH_SYSTEM_APP_WINDOW_MODE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        if (reply.readInt() != 0) {
+            res = true;
+        }
+        data.recycle();
+        reply.recycle();
+        return res;
+    }
+
+    public boolean maximizeOrRestoreAppWindow(IBinder token, boolean max) throws RemoteException {
+        int i;
+        boolean ret;
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(token);
+        if (max) {
+            i = 1;
+        } else {
+            i = 0;
+        }
+        data.writeInt(i);
+        this.mRemote.transact(IActivityManager.MAXIMIZE_RESTORE_APP_WINDOW_TRANSACTION, data, reply, 0);
+        reply.readException();
+        if (reply.readInt() != 0) {
+            ret = true;
+        } else {
+            ret = false;
+        }
+        data.recycle();
+        reply.recycle();
+        return ret;
+    }
+
+    public void showResizingFrame(Rect rect) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        rect.writeToParcel(data, 0);
+        this.mRemote.transact(IActivityManager.SHOW_RESIZING_FRAME_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public void hideResizingFrame() throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        this.mRemote.transact(IActivityManager.HIDE_RESIZING_FRAME_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public List<ActivityManager.RecentTaskInfo> getRecentRunningTasks(int maxNum) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(maxNum);
+        this.mRemote.transact(IActivityManager.GET_RECENET_RUNNING_TASKS, data, reply, 0);
+        reply.readException();
+        ArrayList<ActivityManager.RecentTaskInfo> list = reply.createTypedArrayList(ActivityManager.RecentTaskInfo.CREATOR);
+        data.recycle();
+        reply.recycle();
+        return list;
+    }
+    /**end 'from ActivityManagerProxy'*/ 
 
     private IBinder mRemote;
 }

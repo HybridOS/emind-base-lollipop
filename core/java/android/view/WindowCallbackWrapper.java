@@ -140,5 +140,10 @@ public class WindowCallbackWrapper implements Window.Callback {
     public void onActionModeFinished(ActionMode mode) {
         mWrapped.onActionModeFinished(mode);
     }
+    
+    /*add by xiezhongtian for dispatchWindowCloseClicked*/
+    public boolean dispatchWindowCloseClicked(boolean isMouseRight) {
+        return this.mWrapped.dispatchWindowCloseClicked(isMouseRight);
+    }
 }
 

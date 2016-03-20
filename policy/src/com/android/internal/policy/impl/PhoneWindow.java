@@ -481,6 +481,9 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         } else if (mDecorContentParent != null) {
             mDecorContentParent.setWindowTitle(title);
         }
+        if (!(this.mDecor == null || this.mDecor.getWindowFrame() == null)) {
+            this.mDecor.getWindowFrame().setTitle(title);
+        }
         mTitle = title;
     }
 
@@ -1949,8 +1952,66 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         if (mDecor == null) {
             installDecor();
         }
-        return mDecor;
+        return this.mDecor.getDecorContainer();// 改变返回的内容为DecorContainer的内容
     }
+   
+    //和上面的getDecorView()配合实现顶层view的替换
+    public final View getDecorRootView() {    
+        if (this.mDecor == null) {
+            installDecor();
+        }
+        return this.mDecor;
+    }
+    
+    //WindowFrame的set 和get方法
+    public boolean setWindowFrame(int flags) {
+        if (this.mDecor == null) {
+            return SWEEP_OPEN_MENU;
+        }
+        if ((WindowFrameView.FLAG_WINDOW_FRAME_HIDE_FRAME_MASK & flags) != 0) {
+            this.mDecor.hideWindowFrame(true);
+        } else if (this.mDecor.getWindowFrame() != null) {
+            this.mDecor.hideWindowFrame(SWEEP_OPEN_MENU);
+            this.mDecor.getWindowFrame().setFlags(flags);
+        } else {
+            this.mDecor.setWindowFrame(flags);
+        }
+        return true;
+    }
+
+    public int getWindowFrameFlags() {
+        if (this.mDecor == null || this.mDecor.getWindowFrame() == null) {
+            return WindowFrameView.FLAG_WINDOW_FRAME_HIDE_FRAME_MASK;
+        }
+        return this.mDecor.getWindowFrame().getFlags();
+    }
+
+    public void setWindowFullScreen(boolean fullScreen) {
+    }
+
+    public void setWindowPos(Rect rect) {
+        if (this.mDecor.getWindowFrame() != null) {
+            this.mDecor.getWindowFrame().setWindowPos(rect);
+        }
+    }
+
+    public boolean isWindowMaximized() {
+        return (this.mDecor.getWindowFrame() == null || !this.mDecor.getWindowFrame().isMaximized()) ? SWEEP_OPEN_MENU : true;
+    }
+
+    public final void addCustomFrameTitleView(View titleView) {
+        if (this.mDecor != null && this.mDecor.getWindowFrame() != null) {
+            this.mDecor.getWindowFrame().addCustomFrameTitleView(titleView);
+        }
+    }
+
+    public final void setFrameHeaderBgDrawable(Drawable background) {
+        if (this.mDecor != null && this.mDecor.getWindowFrame() != null) {
+            this.mDecor.getWindowFrame().setFrameHeaderBgDrawable(background);
+        }
+    }
+    /*end for window frame opearation 这些操作大概完成了window frame的系列操作 */
+
 
     @Override
     public final View peekDecorView() {
@@ -2191,7 +2252,9 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         private FrameLayout mDecorContainer; 
         private WindowFrameView mWindowFrame;
         WindowManager mWindowManager;
-        
+        DisplayMetrics mMetrics = null;
+        private int mDockBarHeight = -1;        
+
         private Drawable mMenuBackground;
         private boolean mWatchingForMenu;
         private int mDownY;
@@ -2245,6 +2308,111 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mBarEnterExitDuration = context.getResources().getInteger(
                     R.integer.dock_enter_exit_duration);
         }
+        /*
+        ** Add WindowFrameView to realize some multi-window operation 
+        ** @@add by xiezhongtian
+        */
+        private WindowFrameView getWindowFrame() {
+            return this.mWindowFrame;
+        }
+
+        public ViewGroup getDecorContainer() {
+            if (this.mDecorContainer != null) {
+                return this.mDecorContainer;
+            }
+            return this;
+        }
+
+        public void getLocationInWindow(int[] location) {
+            if (location == null || location.length < PhoneWindow.FLAG_RESOURCE_SET_LOGO) {
+                throw new IllegalArgumentException("location must be an array of two integers");
+            }
+            location[0] = 0;
+            location[PhoneWindow.FLAG_RESOURCE_SET_ICON] = 0;
+        }
+
+        private void setWindowFrame(int flags) {
+            if (this.mWindowFrame == null) {
+                if (PhoneWindow.this.isAppWindow()) {
+                    this.mWindowFrame = new ActivityFrameView(this.mContext, this, flags);
+                    this.mWindowFrame.setLayoutParams(new LayoutParams(-1, -1));
+                } else {
+                    this.mWindowFrame = new DialogFrameView(this.mContext, this, flags);
+                    this.mWindowFrame.setLayoutParams(new LayoutParams(-2, -2));
+                }
+                this.mWindowFrame.mStackBoxId = PhoneWindow.this.getStackId();
+                this.mWindowFrame.mWindow = PhoneWindow.this;
+                WindowManager.LayoutParams attr = PhoneWindow.this.getAttributes();
+                attr.frameInsets.set(this.mWindowFrame.getFrameInsets());
+                attr.headHeight = this.mWindowFrame.mFrameHeaderHeight;
+                PhoneWindow.this.setAttributes(attr);
+                addView(this.mWindowFrame);
+                this.mDecorContainer = this.mWindowFrame.getDecorContainer();
+                removeView(PhoneWindow.this.mContentRoot);
+                this.mDecorContainer.addView(PhoneWindow.this.mContentRoot, 0);
+                setWindowBackground(getBackground());
+                if (PhoneWindow.this.mTitle != null) {
+                    this.mWindowFrame.setTitle(PhoneWindow.this.mTitle);
+                    return;
+                }
+                return;
+            }
+            this.mWindowFrame.setFlags(flags);
+        }
+
+        private void handleFocus(MotionEvent ev) {
+            if (!this.mCurrentOnFocus && ev.isTouchEvent() && ev.getAction() == 0 && PhoneWindow.this.getStackId() != -1) {
+                try {
+                    ActivityManagerNative.getDefault().setFocusedStack(PhoneWindow.this.getStackId());
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        private void handleResetCursor(InputEvent ev) {
+            if ((ev instanceof MotionEvent) && PhoneWindow.this.getStackId() != -1) {
+                MotionEvent event = (MotionEvent) ev;
+                int action = event.getActionMasked();
+                if (action == 3 || action == 10 || action == PhoneWindow.FLAG_RESOURCE_SET_ICON || action == PhoneWindow.FLAG_RESOURCE_SET_ICON_FALLBACK) {
+                    float x = event.getRawX();
+                    float y = event.getRawY();
+                    int[] position = new int[PhoneWindow.FLAG_RESOURCE_SET_LOGO];
+                    getLocationOnScreen(position);
+                    if (x < ((float) position[0]) || y < ((float) position[PhoneWindow.FLAG_RESOURCE_SET_ICON]) || x > ((float) (position[0] + getWidth())) || y > ((float) (position[PhoneWindow.FLAG_RESOURCE_SET_ICON] + getHeight())) || positionInDock(x, y)) {
+                        InputManager.getInstance().resetPointerIcon(this.mContext);
+                    }
+                }
+            }
+        }
+
+        private boolean positionInDock(float x, float y) {
+            if (this.mDockBarHeight == -1) {
+                this.mDockBarHeight = this.mContext.getResources().getDimensionPixelSize(17104915) + this.mContext.getResources().getDimensionPixelSize(17104917);
+            }
+            if (this.mMetrics == null) {
+                this.mMetrics = new DisplayMetrics();
+            }
+            getWindowManager().getDefaultDisplay().getRealMetrics(this.mMetrics);
+            if (y > ((float) (this.mMetrics.heightPixels - this.mDockBarHeight))) {
+                return true;
+            }
+            return PhoneWindow.SWEEP_OPEN_MENU;
+        }
+
+        public WindowManager getWindowManager() {
+            if (this.mWindowManager == null) {
+                this.mWindowManager = (WindowManager) this.mContext.getSystemService("window");
+            }
+            return this.mWindowManager;
+        }
+
+        private void hideWindowFrame(boolean hide) {
+            if (this.mWindowFrame != null) {
+                this.mWindowFrame.hideWindowFrame(hide);
+            }
+        }
+
+        /*end for window frame ZH_CN:增加上述几个方法处理window_frame */
 
         public void setBackgroundFallback(int resId) {
             mBackgroundFallback.setDrawable(resId != 0 ? getContext().getDrawable(resId) : null);
@@ -2334,7 +2502,34 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             }
             return false;
         }
+        
+        /*
+        ** 处理dispatch 事件
+        ** @@ Add by xiezhongtian
+         */
+        public boolean dispatchEarlyFrameEvent(InputEvent ev) {
+            if (ev instanceof MotionEvent) {
+                handleFocus((MotionEvent) ev);
+            }
+            handleResetCursor(ev);
+            if ((ev instanceof KeyEvent) && handleForceFullScreen((KeyEvent) ev)) {
+                return true;
+            }
+            return this.mWindowFrame != null ? this.mWindowFrame.dispatchEarlyFrameEvent(ev) : PhoneWindow.SWEEP_OPEN_MENU;
+        }
 
+        public void dispatchWindowMoved(int newX, int newY) {
+            if (this.mWindowFrame != null) {
+                this.mWindowFrame.dispatchWindowMoved(newX, newY);
+            }
+            PhoneWindow.this.dispatchOnWindowMoved(newX, newY);
+        }
+
+        private boolean handleForceFullScreen(KeyEvent event) {
+            return PhoneWindow.SWEEP_OPEN_MENU;
+        }
+        /*end for dispatch 添加上述三个方法*/
+ 
         @Override
         public boolean dispatchTouchEvent(MotionEvent ev) {
             final Callback cb = getCallback();
@@ -2802,16 +2997,23 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             drawableChanged();
         }
 
+        /*这里设置窗口背景,因为我们设计并实现了一个mDecorContainer用来
+        **挂载原来的decor，所以们需要为其进行背景设置的相关操作*/
         public void setWindowBackground(Drawable drawable) {
-            if (getBackground() != drawable) {
+           if (this.mDecorContainer != null) {
+                if (this.mDecorContainer.getBackground() != drawable) {
+                    this.mDecorContainer.setBackgroundDrawable(drawable);
+                } 
+                setBackground(new ColorDrawable(0));
+           }else if (getBackground() != drawable) {
                 setBackgroundDrawable(drawable);
                 if (drawable != null) {
                     drawable.getPadding(mBackgroundPadding);
                 } else {
                     mBackgroundPadding.setEmpty();
                 }
-                drawableChanged();
             }
+            drawableChanged();
         }
 
         @Override
@@ -3170,9 +3372,25 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             }
         }
 
+        String getCurProcessName(Context context) {
+            int pid = Process.myPid();
+            for (RunningAppProcessInfo appProcess : ((ActivityManager) context.getSystemService("activity")).getRunningAppProcesses()) {
+                if (appProcess.pid == pid) {
+                    return appProcess.processName;
+                }
+            }
+            return null;
+        }
+
+
         @Override
         public void onWindowFocusChanged(boolean hasWindowFocus) {
             super.onWindowFocusChanged(hasWindowFocus);
+            this.mCurrentOnFocus = hasWindowFocus;
+            if (this.mWindowFrame != null) {
+                this.mWindowFrame.mCurrentOnFocus = hasWindowFocus;
+            }
+ 
 
             // If the user is chording a menu shortcut, release the chord since
             // this window lost focus
@@ -3610,13 +3828,23 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             layoutResource = R.layout.screen_simple;
             // System.out.println("Simple!");
         }
-
+        
+        /*这里有可能是windowframeview的加载的地方*/
+        boolean windowWithFrame = a.getBoolean(48, SWEEP_OPEN_MENU);
+        if (windowWithFrame) {
+            layoutResource = 17367228;  //???????找到这个id对应的资源
+        }/*end*/
         mDecor.startChanging();
 
         View in = mLayoutInflater.inflate(layoutResource, null);
         decor.addView(in, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
         mContentRoot = (ViewGroup) in;
-
+        
+        /*判断是的话设置*/
+        if (windowWithFrame) {
+            decor.setWindowFrame(0);
+        }/*end*/
+ 
         ViewGroup contentParent = (ViewGroup)findViewById(ID_ANDROID_CONTENT);
         if (contentParent == null) {
             throw new RuntimeException("Window couldn't find content container view");
@@ -3809,6 +4037,9 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                             R.styleable.Window_windowSharedElementsUseOverlay, true);
                 }
             }
+        }
+        if (isMWPanel() && isAppWindow()) { /*这里进行是否位多窗口的判断并进行相关的操作*/
+            setWindowFrame(0);
         }
     }
 

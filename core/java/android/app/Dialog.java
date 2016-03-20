@@ -813,6 +813,12 @@ public class Dialog implements DialogInterface, Window.Callback,
 
         return false;
     }
+    
+    /*add by xiezhontian to solve some prolblem*/
+    public boolean dispatchWindowCloseClicked(boolean isMouseRight) {
+        dismiss();
+        return true;
+    }
 
     /**
      * @see Activity#onCreatePanelView(int)

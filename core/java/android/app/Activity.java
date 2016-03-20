@@ -2798,6 +2798,13 @@ public class Activity extends ContextThemeWrapper
         return true;
     }
 
+    /*add by xiezhongtian to solve some problem*/
+    public boolean dispatchWindowCloseClicked(boolean isMouseRight) {
+        return false;
+    }
+
+   
+
     /**
      * Default implementation of
      * {@link android.view.Window.Callback#onCreatePanelView}

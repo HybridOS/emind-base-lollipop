@@ -266,6 +266,12 @@ public class DreamService extends Service implements Window.Callback {
     public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
         return false;
     }
+   
+    /**add by xiezhongtian to solve some problem*/
+    public boolean dispatchWindowCloseClicked(boolean isMouseRight) {
+        return false;
+    }
+
 
     /** {@inheritDoc} */
     @Override
