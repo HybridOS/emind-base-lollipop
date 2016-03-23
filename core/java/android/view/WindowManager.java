@@ -522,6 +522,9 @@ public interface WindowManager extends ViewManager {
          */
         public static final int TYPE_MAGNIFICATION_OVERLAY = FIRST_SYSTEM_WINDOW+27;
 
+        /**add by xiezhongtian*/
+        public static final int TYPE_MULTIWINDOW_APPLICATION = 100;
+
         /**
          * Window type: keyguard scrim window. Shows if keyguard needs to be restarted.
          * In multiuser systems shows on all users' windows.
@@ -1338,6 +1341,10 @@ public interface WindowManager extends ViewManager {
          * {@link android.graphics.PixelFormat}.  Default is OPAQUE.
          */
         public int format;
+        /**add by xiezhongtian*/
+        //public final Rect frameInsets;
+        public final Rect frameInsets = new Rect();
+        public int headHeight;/**end*/
     
         /**
          * A style resource defining the animations to use for this window.
@@ -1628,6 +1635,12 @@ public interface WindowManager extends ViewManager {
             out.writeInt(surfaceInsets.top);
             out.writeInt(surfaceInsets.right);
             out.writeInt(surfaceInsets.bottom);
+            /**add by xiezhongtian*/
+            out.writeInt(this.frameInsets.left);
+            out.writeInt(this.frameInsets.top);
+            out.writeInt(this.frameInsets.right);
+            out.writeInt(this.frameInsets.bottom);
+            out.writeInt(this.headHeight);/**end*/
             out.writeInt(needsMenuKey);
         }
 
@@ -1676,6 +1689,13 @@ public interface WindowManager extends ViewManager {
             surfaceInsets.top = in.readInt();
             surfaceInsets.right = in.readInt();
             surfaceInsets.bottom = in.readInt();
+            /**add by xiezhongtian*/
+            this.frameInsets.left = in.readInt();
+            this.frameInsets.top = in.readInt();
+            this.frameInsets.right = in.readInt();
+            this.frameInsets.bottom = in.readInt();/**end*/
+            this.headHeight = in.readInt();
+ 
             needsMenuKey = in.readInt();
         }
 
@@ -1684,6 +1704,7 @@ public interface WindowManager extends ViewManager {
         public static final int TYPE_CHANGED = 1<<1;
         public static final int FLAGS_CHANGED = 1<<2;
         public static final int FORMAT_CHANGED = 1<<3;
+        public static final int FRAME_INSETS_CHANGED = 1073741824;/*add by xiezhongtian*/
         public static final int ANIMATION_CHANGED = 1<<4;
         public static final int DIM_AMOUNT_CHANGED = 1<<5;
         public static final int TITLE_CHANGED = 1<<6;
@@ -1857,7 +1878,16 @@ public interface WindowManager extends ViewManager {
                 surfaceInsets.set(o.surfaceInsets);
                 changes |= SURFACE_INSETS_CHANGED;
             }
-
+            /**add by xiezhongtian*/
+            if (!this.frameInsets.equals(o.frameInsets)) {
+                this.frameInsets.set(o.frameInsets);
+                changes |= FRAME_INSETS_CHANGED;
+            }
+            if (this.headHeight != o.headHeight) {
+                this.headHeight = o.headHeight;
+                changes |= FRAME_INSETS_CHANGED;
+            }/**end*/
+ 
             if (needsMenuKey != o.needsMenuKey) {
                 needsMenuKey = o.needsMenuKey;
                 changes |= NEEDS_MENU_KEY_CHANGED;
@@ -1969,6 +1999,14 @@ public interface WindowManager extends ViewManager {
             if (!surfaceInsets.equals(Insets.NONE)) {
                 sb.append(" surfaceInsets=").append(surfaceInsets);
             }
+            /**add by xiezhongtian*/
+            if (!this.frameInsets.equals(Insets.NONE)) {
+                sb.append(" frameInsets=").append(this.frameInsets);
+            }
+            if (this.headHeight != 0) {
+                sb.append(" headHeight=%d");
+                sb.append(this.headHeight);
+            }/**end*/
             if (needsMenuKey != NEEDS_MENU_UNSET) {
                 sb.append(" needsMenuKey=");
                 sb.append(needsMenuKey);

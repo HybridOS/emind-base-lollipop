@@ -32,7 +32,7 @@ import java.util.List;
  * @hide
  */
 public class WindowInfo implements Parcelable {
-    private static final int MAX_POOL_SIZE = 10;
+    private static final int MAX_POOL_SIZE = 20;
 
     private static final Pools.SynchronizedPool<WindowInfo> sPool =
             new Pools.SynchronizedPool<WindowInfo>(MAX_POOL_SIZE);
@@ -42,6 +42,11 @@ public class WindowInfo implements Parcelable {
     public IBinder token;
     public IBinder parentToken;
     public boolean focused;
+    /**add by xiezhongtian*/
+    public Rect frame = new Rect();
+    public Rect frameInsets = new Rect();
+    public String title;
+ 
     public final Rect boundsInScreen = new Rect();
     public List<IBinder> childTokens;
 
@@ -73,7 +78,10 @@ public class WindowInfo implements Parcelable {
                 window.childTokens.addAll(other.childTokens);
             }
         }
-
+        window.title = other.title;/**add by xiezhongtian*/
+        window.frame.set(other.frame);
+        window.frameInsets.set(other.frameInsets);/**end*/
+ 
         return window;
     }
 
@@ -102,6 +110,9 @@ public class WindowInfo implements Parcelable {
         } else {
             parcel.writeInt(0);
         }
+        parcel.writeString(this.title);/**add by xiezhongtian*/
+        this.frame.writeToParcel(parcel, flags);
+        this.frameInsets.writeToParcel(parcel, flags);/**end*/
     }
 
     @Override
@@ -115,6 +126,10 @@ public class WindowInfo implements Parcelable {
         builder.append(", parent=").append(parentToken);
         builder.append(", focused=").append(focused);
         builder.append(", children=").append(childTokens);
+        /**add by xiezhongtian*/
+        builder.append(", title=").append(this.title);
+        builder.append(", frame=").append(this.frame);
+        builder.append(", frameInsets=").append(this.frameInsets);/**end*/
         builder.append(']');
         return builder.toString();
     }
@@ -134,6 +149,9 @@ public class WindowInfo implements Parcelable {
             }
             parcel.readBinderList(childTokens);
         }
+        this.title = parcel.readString();/**add by xiezhongtian*/
+        this.frame.readFromParcel(parcel);
+        this.frameInsets.readFromParcel(parcel);/**end*/ 
     }
 
     private void clear() {
@@ -146,7 +164,10 @@ public class WindowInfo implements Parcelable {
         if (childTokens != null) {
             childTokens.clear();
         }
-    }
+        this.title = null;/**add by xiezhongtian*/
+        this.frame.setEmpty();
+        this.frameInsets.setEmpty();/**end*/
+   }
 
     public static final Parcelable.Creator<WindowInfo> CREATOR =
             new Creator<WindowInfo>() {

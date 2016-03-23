@@ -256,7 +256,7 @@ public class WindowFrameView extends FrameLayout {
         Rect rect = getFrameInsets();
         setFrameInsets(rect);
         if (this.mWindow != null) {
-            LayoutParams attr = this.mWindow.getAttributes();
+            WindowManager.LayoutParams attr = this.mWindow.getAttributes();
             attr.frameInsets.set(rect);
             attr.headHeight = this.mFrameHeaderHeight;
             this.mWindow.setAttributes(attr);

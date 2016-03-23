@@ -8385,6 +8385,20 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
         return onKeyPreIme(event.getKeyCode(), event);
     }
 
+    /**add by xiezhongtian for something about key-event */
+    public void dispatchWindowMoved(int newX, int newY) {
+    }
+
+    public boolean dispatchEarlyFrameEvent(InputEvent event) {
+        return DBG;
+    }
+
+    public void setFrameInsets(Rect rect) {
+        if (this.mAttachInfo != null) {
+            this.mAttachInfo.mFrameInsets.set(rect);
+        }
+    }/**end*/
+
     /**
      * Dispatch a key event to the next view on the focus path. This path runs
      * from the top of the view tree down to the currently focused view. If this
@@ -20383,6 +20397,9 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
          * Always report new attributes at next traversal.
          */
         boolean mForceReportNewAttributes;
+
+        /**add by xiezhongtian for mFrameInsets*/
+        final Rect mFrameInsets = new Rect();
 
         /**
          * Set during a traveral if any views want to keep the screen on.
