@@ -112,6 +112,10 @@ public final class ViewRootImpl implements ViewParent,
     private static final boolean DEBUG_CONFIGURATION = false || LOCAL_LOGV;
     private static final boolean DEBUG_FPS = false;
     private static final boolean DEBUG_INPUT_STAGES = false || LOCAL_LOGV;
+    /**add by xiezhongtian*/
+    public static int FORCE_FULL_SCREEN = 1;
+    public static int FORCE_UN_FULL_SCREEN = 2;
+    private static int HANDLE_FULL_SCREEN_MSG = 1;
 
     /**
      * Set this system property to true to force the view hierarchy to render
@@ -299,6 +303,9 @@ public final class ViewRootImpl implements ViewParent,
     private boolean mRenderProfilingEnabled;
 
     private boolean mMediaDisabled;
+    /**add by xiezhongtian*/
+    private int mForceFullScreenAttri;
+    private Handler mHandle;/**end*/
 
     // Variables to track frames per second, enabled via DEBUG_FPS flag
     private long mFpsStartTime = -1;
@@ -3969,7 +3976,7 @@ public final class ViewRootImpl implements ViewParent,
         }
     }
 
-    /**
+    /*1*
      * Delivers post-ime input events to the view hierarchy.
      */
     final class ViewPostImeInputStage extends InputStage {
@@ -5274,6 +5281,20 @@ public final class ViewRootImpl implements ViewParent,
             mAccessibilityInteractionController = new AccessibilityInteractionController(this);
         }
         return mAccessibilityInteractionController;
+    }
+    /**add by xiezhongtian*/
+    public boolean forceFullScreenAttr(int attr) {
+        if (attr == this.mForceFullScreenAttri) {
+            return LOCAL_LOGV;
+        }
+        if (((this.mWindowAttributes.subtreeSystemUiVisibility | this.mWindowAttributes.systemUiVisibility) & MSG_INVALIDATE_RECT) == 0 && this.mForceFullScreenAttri == 0) {
+            return LOCAL_LOGV;
+        }
+        this.mForceFullScreenAttri = attr;
+        this.mWindowAttributesChanged = true;
+        this.mAttachInfo.mRecomputeGlobalAttributes = true;
+        scheduleTraversals();
+        return true;
     }
 
     private int relayoutWindow(WindowManager.LayoutParams params, int viewVisibility,

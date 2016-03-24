@@ -23,6 +23,7 @@ import android.hardware.input.TouchCalibration;
 import android.os.IBinder;
 import android.view.InputDevice;
 import android.view.InputEvent;
+import android.view.PointerIcon;
 
 /** @hide */
 interface IInputManager {
@@ -39,6 +40,9 @@ interface IInputManager {
     // Injects an input event into the system.  To inject into windows owned by other
     // applications, the caller must have the INJECT_EVENTS permission.
     boolean injectInputEvent(in InputEvent ev, int mode);
+    
+    //add by xiezhongtian for updatePointerIcon;
+    boolean updatePointerIcon(in PointerIcon icon); 
 
     // Calibrate input device position
     TouchCalibration getTouchCalibrationForInputDevice(String inputDeviceDescriptor, int rotation);

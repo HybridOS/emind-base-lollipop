@@ -110,6 +110,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
+import android.widget.FrameLayout.LayoutParams;/**add by xiezhongtian*/
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
@@ -2254,6 +2255,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         WindowManager mWindowManager;
         DisplayMetrics mMetrics = null;
         private int mDockBarHeight = -1;        
+        private boolean mCurrentOnFocus = PhoneWindow.SWEEP_OPEN_MENU;
 
         private Drawable mMenuBackground;
         private boolean mWatchingForMenu;

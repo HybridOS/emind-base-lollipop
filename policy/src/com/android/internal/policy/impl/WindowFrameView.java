@@ -196,7 +196,7 @@ public class WindowFrameView extends FrameLayout {
                         }
                     }
                     return true;
-                    break;
+                    //break;
             }
             return true;
         }
@@ -524,7 +524,8 @@ public class WindowFrameView extends FrameLayout {
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         boolean ret = false;
         if (!this.mExpandable || this.mMaximized || this.mHideFrame) {
-            return POINT_INWINDOW_MIDDLE;
+            //return POINT_INWINDOW_MIDDLE;
+            return false;
         }
         int pos = POINT_OUTSIDE_WINDOW;
         int rawX = (int) ev.getRawX();
@@ -548,7 +549,8 @@ public class WindowFrameView extends FrameLayout {
     public boolean onTouchEvent(MotionEvent event) {
         boolean ret = false;
         if (!this.mExpandable || this.mMaximized || this.mHideFrame) {
-            return POINT_INWINDOW_MIDDLE;
+            //return POINT_INWINDOW_MIDDLE;
+            return false;
         }
         int rawX = (int) event.getRawX();
         int rawY = (int) event.getRawY();

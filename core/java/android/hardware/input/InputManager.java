@@ -21,6 +21,7 @@ import com.android.internal.util.ArrayUtils;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.content.Context;
+import android.graphics.Bitmap;/**add by xiezhongtian*/
 import android.media.AudioAttributes;
 import android.os.Binder;
 import android.os.Handler;
@@ -38,6 +39,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.InputDevice;
 import android.view.InputEvent;
+import android.view.PointerIcon;/**add by xiezhongtian*/
 
 import java.util.ArrayList;
 
@@ -52,6 +54,16 @@ import java.util.ArrayList;
  */
 public final class InputManager {
     private static final String TAG = "InputManager";
+    /**add by xiezhongtian*/
+    public static final int ARROW_DRAG = 5;
+    public static final int ARROW_INPUT = 7;
+    public static final int ARROW_LEFT_RIGHT = 1;
+    public static final int ARROW_LINK = 6;
+    public static final int ARROW_NOMAL = 0;
+    public static final int ARROW_TOPLEFT = 3;
+    public static final int ARROW_TOPRIGHT = 4;
+    public static final int ARROW_UP_DOWN = 2;/**end*/
+ 
     private static final boolean DEBUG = false;
 
     private static final int MSG_DEVICE_ADDED = 1;
@@ -683,6 +695,57 @@ public final class InputManager {
             return false;
         }
     }
+    /**add by xiezhongtian*/
+    public boolean updatePointerIcon(Context context, int systemIconIndex) {
+        int systemIconStyle;
+        switch (systemIconIndex) {
+            case INJECT_INPUT_EVENT_MODE_ASYNC /*0*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW;
+                break;
+            case MSG_DEVICE_ADDED /*1*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_LEFT_RIGHT;
+                break;
+            case MSG_DEVICE_REMOVED /*2*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_UP_DOWN;
+                break;
+            case MSG_DEVICE_CHANGED /*3*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_TOPLEFT;
+                break;
+            case ARROW_TOPRIGHT /*4*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_TOPRIGHT;
+                break;
+            case ARROW_DRAG /*5*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_DRAG;
+                break;
+            case ARROW_LINK /*6*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_LINK;
+                break;
+            case MAX_POINTER_SPEED /*7*/:
+                systemIconStyle = PointerIcon.STYLE_ARROW_INPUT;
+                break;
+            default:
+                systemIconStyle = PointerIcon.STYLE_ARROW;
+                break;
+        }
+        try {
+            return this.mIm.updatePointerIcon(PointerIcon.getSystemIcon(context, systemIconStyle));
+        } catch (RemoteException e) {
+            return DEBUG;
+        }
+    }
+
+    public boolean updatePointerIcon(Bitmap bitmap, float hotSpotX, float hotSpotY) {
+        try {
+            return this.mIm.updatePointerIcon(PointerIcon.createCustomIcon(bitmap, hotSpotX, hotSpotY));
+        } catch (RemoteException e) {
+            return DEBUG;
+        }
+    }
+
+    public boolean resetPointerIcon(Context context) {
+        return updatePointerIcon(context, INJECT_INPUT_EVENT_MODE_ASYNC);
+    }/**add by xiezhongtian*/
+
 
     private void populateInputDevicesLocked() {
         if (mInputDevicesChangedListener == null) {

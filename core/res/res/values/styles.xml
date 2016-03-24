@@ -1320,7 +1320,7 @@ please see styles_device_defaults.xml.
         <item name="pointerIconSpotHover">@drawable/pointer_spot_hover_icon</item>
         <item name="pointerIconSpotTouch">@drawable/pointer_spot_touch_icon</item>
         <item name="pointerIconSpotAnchor">@drawable/pointer_spot_anchor_icon</item>
-        <!--add by xiezhongtian
+        <!--add by xiezhongtian-->
         <item name="pointerIconArrowLeftRight">@drawable/pointer_arrow_leftright</item>
         <item name="pointerIconArrowUpDown">@drawable/pointer_arrow_updown</item>
         <item name="pointerIconArrowTopLeft">@drawable/pointer_arrow_lean14</item>
@@ -1328,8 +1328,6 @@ please see styles_device_defaults.xml.
         <item name="pointerIconArrowDrag">@drawable/pointer_arrow_drag</item>
         <item name="pointerIconArrowInput">@drawable/pointer_arrow_input</item>
         <item name="pointerIconArrowLink">@drawable/pointer_arrow_link</item>
-        -->       
-
     </style>
 
     <!-- Wifi dialog styles -->

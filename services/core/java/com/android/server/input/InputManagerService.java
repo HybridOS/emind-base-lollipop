@@ -174,6 +174,9 @@ public class InputManagerService extends IInputManager.Stub
     private static native void nativeRegisterInputChannel(long ptr, InputChannel inputChannel,
             InputWindowHandle inputWindowHandle, boolean monitor);
     private static native void nativeUnregisterInputChannel(long ptr, InputChannel inputChannel);
+    /**add by xiezhongtian*/
+    private static native void nativeUpdatePointerIcon(long j, PointerIcon pointerIcon);/**end*/
+
     private static native void nativeSetInputFilterEnabled(long ptr, boolean enable);
     private static native int nativeInjectInputEvent(long ptr, InputEvent event, int displayId,
             int injectorPid, int injectorUid, int syncMode, int timeoutMillis,
@@ -1294,6 +1297,14 @@ public class InputManagerService extends IInputManager.Stub
         }
         return result;
     }
+    /**add by xiezhongtian*/
+    public boolean updatePointerIcon(PointerIcon icon) {
+        try {
+            nativeUpdatePointerIcon(this.mPtr, icon);
+        } catch (Exception e) {
+        }
+        return true;
+    }/**end*/
 
     // Binder call
     @Override

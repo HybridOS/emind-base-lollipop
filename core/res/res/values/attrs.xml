@@ -7270,7 +7270,16 @@
         <!-- Reference to a pointer icon drawable with STYLE_SPOT_TOUCH -->
         <attr name="pointerIconSpotTouch" format="reference" />
         <!-- Reference to a pointer icon drawable with STYLE_SPOT_ANCHOR -->
+
+        <!--add by xiezhongtian-->
         <attr name="pointerIconSpotAnchor" format="reference" />
+        <attr name="pointerIconArrowLeftRight" format="reference" />
+        <attr name="pointerIconArrowUpDown" format="reference" />
+        <attr name="pointerIconArrowTopLeft" format="reference" />
+        <attr name="pointerIconArrowTopRight" format="reference" />
+        <attr name="pointerIconArrowDrag" format="reference" />
+        <attr name="pointerIconArrowInput" format="reference" />
+        <attr name="pointerIconArrowLink" format="reference" />
     </declare-styleable>
 
     <declare-styleable name="PointerIcon">

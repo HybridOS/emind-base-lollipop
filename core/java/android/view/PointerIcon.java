@@ -50,6 +50,15 @@ public final class PointerIcon implements Parcelable {
     /** Style constant: Arrow icon.  (Default mouse pointer) */
     public static final int STYLE_ARROW = 1000;
 
+   /**add by xiezhongtian for sevral arrow  icon*/
+    public static final int STYLE_ARROW_DRAG = 3004;
+    public static final int STYLE_ARROW_INPUT = 3006;
+    public static final int STYLE_ARROW_LEFT_RIGHT = 3000;
+    public static final int STYLE_ARROW_LINK = 3005;
+    public static final int STYLE_ARROW_TOPLEFT = 3002;
+    public static final int STYLE_ARROW_TOPRIGHT = 3003;
+    public static final int STYLE_ARROW_UP_DOWN = 3001;/**end*/
+
     /** {@hide} Style constant: Spot hover icon for touchpads. */
     public static final int STYLE_SPOT_HOVER = 2000;
 
@@ -433,6 +442,20 @@ public final class PointerIcon implements Parcelable {
                 return com.android.internal.R.styleable.Pointer_pointerIconSpotTouch;
             case STYLE_SPOT_ANCHOR:
                 return com.android.internal.R.styleable.Pointer_pointerIconSpotAnchor;
+            case STYLE_ARROW_LEFT_RIGHT /*3000*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowLeftRight;/**add by xiezhongtian*/
+            case STYLE_ARROW_UP_DOWN /*3001*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowUpDown;
+            case STYLE_ARROW_TOPLEFT /*3002*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowTopLeft;
+            case STYLE_ARROW_TOPRIGHT /*3003*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowTopRight;
+            case STYLE_ARROW_DRAG /*3004*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowDrag;
+            case STYLE_ARROW_LINK /*3005*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowLink;
+            case STYLE_ARROW_INPUT /*3006*/:
+                return com.android.internal.R.styleable.Pointer_pointerIconArrowInput;/**end*/
             default:
                 return 0;
         }

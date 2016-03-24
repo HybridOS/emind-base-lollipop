@@ -288,6 +288,10 @@ public final class Configuration implements Parcelable, Comparable<Configuration
      * resource qualifier. */
     public static final int TOUCHSCREEN_FINGER = 3;
     
+    /**add by xiezhongtian for position detect*/
+    public static final int SYSTEM_WINDOW_MODE_TYPE_MULTI_WINDOW = 2;
+    public static final int SYSTEM_WINDOW_MODE_TYPE_TABLET = 1;
+
     /**
      * The kind of touch screen attached to the device.
      * One of: {@link #TOUCHSCREEN_NOTOUCH}, {@link #TOUCHSCREEN_FINGER}.
@@ -532,6 +536,9 @@ public final class Configuration implements Parcelable, Comparable<Configuration
      */
     public int smallestScreenWidthDp;
 
+    /**add by xiezhongtian for system_mode*/
+    public int system_mode;
+
     /**
      * Default value for {@link #densityDpi} indicating that no width
      * has been specified.
@@ -644,6 +651,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         compatScreenHeightDp = o.compatScreenHeightDp;
         compatSmallestScreenWidthDp = o.compatSmallestScreenWidthDp;
         seq = o.seq;
+        system_mode = o.system_mode;/**add by xiezhongtian*/
     }
     
     public String toString() {
@@ -780,6 +788,10 @@ public final class Configuration implements Parcelable, Comparable<Configuration
             sb.append(" s.");
             sb.append(seq);
         }
+        if (system_mode != 0) {/**add by xiezhongtian*/
+            sb.append(" system_mode.");
+            sb.append(system_mode);
+        }/**end*/ 
         sb.append('}');
         return sb.toString();
     }
@@ -806,6 +818,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         smallestScreenWidthDp = compatSmallestScreenWidthDp = SMALLEST_SCREEN_WIDTH_DP_UNDEFINED;
         densityDpi = DENSITY_DPI_UNDEFINED;
         seq = 0;
+        system_mode = UI_MODE_TYPE_UNDEFINED;/**add by xiezhongtian*/
     }
 
     /** {@hide} */
@@ -948,8 +961,11 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         if (delta.seq != 0) {
             seq = delta.seq;
         }
-        
+        if (delta.system_mode == 0) {/*add if system_mode*/
         return changed;
+        }
+        this.system_mode = delta.system_mode;/**add by xiezhongtian*/
+        return changed | NATIVE_CONFIG_LAYOUTDIR;/**end*/
     }
 
     /**
@@ -1058,8 +1074,11 @@ public final class Configuration implements Parcelable, Comparable<Configuration
                 && densityDpi != delta.densityDpi) {
             changed |= ActivityInfo.CONFIG_DENSITY;
         }
-
-        return changed;
+        /**add if delta.system_mode*/
+        if (delta.system_mode == 0 || this.system_mode == delta.system_mode) {
+            return changed;
+        }
+        return changed | NATIVE_CONFIG_LAYOUTDIR;
     }
 
     /**
@@ -1147,6 +1166,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         dest.writeInt(compatScreenHeightDp);
         dest.writeInt(compatSmallestScreenWidthDp);
         dest.writeInt(seq);
+        dest.writeInt(system_mode);/**add by xiezhongtian*/
     }
 
     public void readFromParcel(Parcel source) {
@@ -1175,6 +1195,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         compatScreenHeightDp = source.readInt();
         compatSmallestScreenWidthDp = source.readInt();
         seq = source.readInt();
+        system_mode = source.readInt();
     }
     
     public static final Parcelable.Creator<Configuration> CREATOR
@@ -1664,6 +1685,11 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         if (base.densityDpi != change.densityDpi) {
             delta.densityDpi = change.densityDpi;
         }
+        /**add by xiezhongtian for system_mode*/
+        if (base.system_mode != change.system_mode) {
+            delta.system_mode = change.system_mode;
+        }/**end*/
+ 
         return delta;
     }
 
