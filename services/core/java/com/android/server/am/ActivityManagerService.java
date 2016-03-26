@@ -100,6 +100,7 @@ import org.xmlpull.v1.XmlSerializer;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.ITaskStateListenerCallback;/*add by xiezhongtian*/
+import android.app.ActivityManager.RecentTaskInfo;
 import android.app.ActivityManager.RunningTaskInfo;
 import android.app.ActivityManager.StackInfo;
 import android.app.ActivityManagerInternal;
@@ -402,6 +403,8 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     /**add by xiezhongtian for ITaskStateListenerCallback */
     private RemoteCallbackList<ITaskStateListenerCallback> mTaskStateListeners = new RemoteCallbackList();
+    
+    //MultiWindowCompatibility mwCompat = null;/**add by xiezhongtian*/
 
     public IntentFirewall mIntentFirewall;
 
@@ -949,7 +952,7 @@ public final class ActivityManagerService extends ActivityManagerNative
     int mConfigurationSeq = 0;
 
     /*add by xiezhongtian for some reason*/
-    //private static long sWinQElapsetime = 2000;
+    private static long sWinQElapsetime = 2000;
 
     /**
      * Hardware-reported OpenGLES version.
@@ -1133,7 +1136,8 @@ public final class ActivityManagerService extends ActivityManagerNative
     boolean mDidDexOpt;
 
     /*add by xiezhongtian for */
-    private boolean mRunningVoice = VALIDATE_TOKENS;
+    //private boolean mRunningVoice = VALIDATE_TOKENS;
+    private List<Integer> mRestoringStackIds;
 
     /**
      * Set if the systemServer made a call to enterSafeMode.
@@ -2186,12 +2190,11 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
             }
         };
-
         Watchdog.getInstance().addMonitor(this);
         Watchdog.getInstance().addThread(mHandler);
         /**add by xiezhongtian*/
-        CZAutoRunController.newInstance(this, this.mContext);
-        CZMemoryPolicy.newInstance(this);/**end*/
+        //CZAutoRunController.newInstance(this, this.mContext);
+        //CZMemoryPolicy.newInstance(this);/**end*/
     }
 
     public void setSystemServiceManager(SystemServiceManager mgr) {
@@ -5340,8 +5343,8 @@ public final class ActivityManagerService extends ActivityManagerNative
     
     void forceStopPackage(String packageName, int userId, boolean commitPMSettings) {
         if (checkCallingPermission("android.permission.FORCE_STOP_PACKAGES") != 0) {
-        if (checkCallingPermission(android.Manifest.permission.FORCE_STOP_PACKAGES)
-                != PackageManager.PERMISSION_GRANTED) {
+        //if (checkCallingPermission(android.Manifest.permission.FORCE_STOP_PACKAGES)
+        //        != PackageManager.PERMISSION_GRANTED) {
             String msg = "Permission Denial: forceStopPackage() from pid="
                     + Binder.getCallingPid()
                     + ", uid=" + Binder.getCallingUid()
@@ -6052,7 +6055,8 @@ public final class ActivityManagerService extends ActivityManagerNative
             ApplicationInfo appInfo = app.instrumentationInfo != null
                     ? app.instrumentationInfo : app.info;
             app.compat = compatibilityInfoForPackageLocked(appInfo);
-            app.mwCompat = new MultiWindowCompatibility(this.mMultiWindowMgr.getAppCompatMode(processName));/**add by xiezhongtian*/
+			/**add by xiezhongtian*/
+            app.mwCompat = new MultiWindowCompatibility(this.mMultiWindowMgr.getAppCompatMode(processName));
             if (profileFd != null) {
                 profileFd = profileFd.dup();
             }
@@ -6062,7 +6066,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                     profilerInfo, app.instrumentationArguments, app.instrumentationWatcher,
                     app.instrumentationUiAutomationConnection, testMode, enableOpenGlTrace,
                     isRestrictedBackupMode || !normalMode, app.persistent,
-                    new Configuration(mConfiguration), app.compat,
+                    new Configuration(mConfiguration), app.compat, app.mwCompat,
                     getCommonServicesLocked(app.isolated),
                     mCoreSettingsObserver.getCoreSettingsLocked());
             updateLruProcessLocked(app, false, null);
@@ -6318,15 +6322,15 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
                 scheduleStartProfilesLocked();
             }
+            else/**add by xiezhongtian*/
+            {
+                /*CZAutoRunController.getInstance().onBootFinished();
+                CZMemoryPolicy.getInstance().onBootFinished();
+                CZOnlineConfigManager.getInstance().init(this.mContext);*/
+                return;
+            }
         }
-        else/**add by xiezhongtian*/
-        {
-          CZAutoRunController.getInstance().onBootFinished();
-          CZMemoryPolicy.getInstance().onBootFinished();
-          CZOnlineConfigManager.getInstance().init(this.mContext);
-          return;
     }
-
     @Override
     public void bootAnimationComplete() {
         final boolean callFinishBooting;
@@ -8207,6 +8211,7 @@ public final class ActivityManagerService extends ActivityManagerNative
     }
 
   /**add by xiezhongtian to get recent runing tasks*/
+/*
   public List<ActivityManager.RecentTaskInfo> getRecentRunningTasks(int paramInt)
   {
     int i = Binder.getCallingUid();
@@ -8238,7 +8243,29 @@ public final class ActivityManagerService extends ActivityManagerNative
       i = j;
     }
   }
- 
+d2j*/ 
+    public List<RecentTaskInfo> getRecentRunningTasks(int maxNum) {
+        ArrayList<RecentTaskInfo> res;
+        int callingUid = Binder.getCallingUid();
+        synchronized (this) {
+            int i;
+            ArrayList<TaskRecord> tasks = this.mStackSupervisor.getTasksLocked(callingUid);
+            int N = tasks.size();
+            if (maxNum < N) {
+                i = maxNum;
+            } else {
+                i = N;
+            }
+            res = new ArrayList(i);
+            for (int i2 = MY_PID; i2 < N && maxNum > 0; i2 += SHOW_ERROR_MSG) {
+                res.add(createRecentTaskInfoFromTaskRecord((TaskRecord) tasks.get(i2)));
+                maxNum--;
+            }
+        }
+        return res;
+    }
+
+
     @Override
     public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum, int flags, int userId) {
         final int callingUid = Binder.getCallingUid();
@@ -8602,6 +8629,7 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     @Override
     public boolean removeTask(int taskId) {
+        boolean ret;
         synchronized (this) {
             enforceCallingPermission(android.Manifest.permission.REMOVE_TASKS,
                     "removeTask()");
@@ -16809,7 +16837,7 @@ public final class ActivityManagerService extends ActivityManagerNative
 
             if (mWindowManager != null) {
                 mProcessList.applyDisplaySize(mWindowManager);
-                CZMemoryPolicy.getInstance().appDisplaySize(this.mWindowManager);/**add by xiezhongtian*/
+                ////CZMemoryPolicy.getInstance().appDisplaySize(this.mWindowManager);/**add by xiezhongtian*/
             }
 
             final long origId = Binder.clearCallingIdentity();
@@ -19760,130 +19788,6 @@ public final class ActivityManagerService extends ActivityManagerNative
         info.applicationInfo = getAppInfoForUser(info.applicationInfo, userId);
         return info;
     }
-
-    private final class LocalService extends ActivityManagerInternal {
-        @Override
-        public void onWakefulnessChanged(int wakefulness) {
-            ActivityManagerService.this.onWakefulnessChanged(wakefulness);
-        }
-
-        @Override
-        public int startIsolatedProcess(String entryPoint, String[] entryPointArgs,
-                String processName, String abiOverride, int uid, Runnable crashHandler) {
-            return ActivityManagerService.this.startIsolatedProcess(entryPoint, entryPointArgs,
-                    processName, abiOverride, uid, crashHandler);
-        }
-    }
-
-    /**
-     * An implementation of IAppTask, that allows an app to manage its own tasks via
-     * {@link android.app.ActivityManager.AppTask}.  We keep track of the callingUid to ensure that
-     * only the process that calls getAppTasks() can call the AppTask methods.
-     */
-    class AppTaskImpl extends IAppTask.Stub {
-        private int mTaskId;
-        private int mCallingUid;
-
-        public AppTaskImpl(int taskId, int callingUid) {
-            mTaskId = taskId;
-            mCallingUid = callingUid;
-        }
-
-        private void checkCaller() {
-            if (mCallingUid != Binder.getCallingUid()) {
-                throw new SecurityException("Caller " + mCallingUid
-                        + " does not match caller of getAppTasks(): " + Binder.getCallingUid());
-            }
-        }
-
-        @Override
-        public void finishAndRemoveTask() {
-            checkCaller();
-
-            synchronized (ActivityManagerService.this) {
-                long origId = Binder.clearCallingIdentity();
-                try {
-                    if (!removeTaskByIdLocked(mTaskId, false)) {
-                        throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
-                    }
-                } finally {
-                    Binder.restoreCallingIdentity(origId);
-                }
-            }
-        }
-
-        @Override
-        public ActivityManager.RecentTaskInfo getTaskInfo() {
-            checkCaller();
-
-            synchronized (ActivityManagerService.this) {
-                long origId = Binder.clearCallingIdentity();
-                try {
-                    TaskRecord tr = recentTaskForIdLocked(mTaskId);
-                    if (tr == null) {
-                        throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
-                    }
-                    return createRecentTaskInfoFromTaskRecord(tr);
-                } finally {
-                    Binder.restoreCallingIdentity(origId);
-                }
-            }
-        }
-
-        @Override
-        public void moveToFront() {
-            checkCaller();
-            // Will bring task to front if it already has a root activity.
-            startActivityFromRecentsInner(mTaskId, null);
-        }
-
-        @Override
-        public int startActivity(IBinder whoThread, String callingPackage,
-                Intent intent, String resolvedType, Bundle options) {
-            checkCaller();
-
-            int callingUser = UserHandle.getCallingUserId();
-            TaskRecord tr;
-            IApplicationThread appThread;
-            synchronized (ActivityManagerService.this) {
-                tr = recentTaskForIdLocked(mTaskId);
-                if (tr == null) {
-                    throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
-                }
-                appThread = ApplicationThreadNative.asInterface(whoThread);
-                if (appThread == null) {
-                    throw new IllegalArgumentException("Bad app thread " + appThread);
-                }
-            }
-            return mStackSupervisor.startActivityMayWait(appThread, -1, callingPackage, intent,
-                    resolvedType, null, null, null, null, 0, 0, null, null,
-                    null, options, callingUser, null, tr);
-        }
-
-        @Override
-        public void setExcludeFromRecents(boolean exclude) {
-            checkCaller();
-
-            synchronized (ActivityManagerService.this) {
-                long origId = Binder.clearCallingIdentity();
-                try {
-                    TaskRecord tr = recentTaskForIdLocked(mTaskId);
-                    if (tr == null) {
-                        throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
-                    }
-                    Intent intent = tr.getBaseIntent();
-                    if (exclude) {
-                        intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-                    } else {
-                        intent.setFlags(intent.getFlags()
-                                & ~Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-                    }
-                } finally {
-                    Binder.restoreCallingIdentity(origId);
-                }
-            }
-        }
-
     /**add by xiezhongtian to for task*/
     RecentTaskInfo getTaskInfo(TaskRecord tr) {
         RecentTaskInfo rti = new RecentTaskInfo();
@@ -20112,5 +20016,129 @@ public final class ActivityManagerService extends ActivityManagerNative
     public void hideResizingFrame() {
         this.mWindowManager.hideResizingFrame();
     }/**end*/
+ 
 
+    private final class LocalService extends ActivityManagerInternal {
+        @Override
+        public void onWakefulnessChanged(int wakefulness) {
+            ActivityManagerService.this.onWakefulnessChanged(wakefulness);
+        }
+
+        @Override
+        public int startIsolatedProcess(String entryPoint, String[] entryPointArgs,
+                String processName, String abiOverride, int uid, Runnable crashHandler) {
+            return ActivityManagerService.this.startIsolatedProcess(entryPoint, entryPointArgs,
+                    processName, abiOverride, uid, crashHandler);
+        }
+    }
+
+    /**
+     * An implementation of IAppTask, that allows an app to manage its own tasks via
+     * {@link android.app.ActivityManager.AppTask}.  We keep track of the callingUid to ensure that
+     * only the process that calls getAppTasks() can call the AppTask methods.
+     */
+    class AppTaskImpl extends IAppTask.Stub {
+        private int mTaskId;
+        private int mCallingUid;
+
+        public AppTaskImpl(int taskId, int callingUid) {
+            mTaskId = taskId;
+            mCallingUid = callingUid;
+        }
+
+        private void checkCaller() {
+            if (mCallingUid != Binder.getCallingUid()) {
+                throw new SecurityException("Caller " + mCallingUid
+                        + " does not match caller of getAppTasks(): " + Binder.getCallingUid());
+            }
+        }
+
+        @Override
+        public void finishAndRemoveTask() {
+            checkCaller();
+
+            synchronized (ActivityManagerService.this) {
+                long origId = Binder.clearCallingIdentity();
+                try {
+                    if (!removeTaskByIdLocked(mTaskId, false)) {
+                        throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
+                    }
+                } finally {
+                    Binder.restoreCallingIdentity(origId);
+                }
+            }
+        }
+
+        @Override
+        public ActivityManager.RecentTaskInfo getTaskInfo() {
+            checkCaller();
+
+            synchronized (ActivityManagerService.this) {
+                long origId = Binder.clearCallingIdentity();
+                try {
+                    TaskRecord tr = recentTaskForIdLocked(mTaskId);
+                    if (tr == null) {
+                        throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
+                    }
+                    return createRecentTaskInfoFromTaskRecord(tr);
+                } finally {
+                    Binder.restoreCallingIdentity(origId);
+                }
+            }
+        }
+
+        @Override
+        public void moveToFront() {
+            checkCaller();
+            // Will bring task to front if it already has a root activity.
+            startActivityFromRecentsInner(mTaskId, null);
+        }
+
+        @Override
+        public int startActivity(IBinder whoThread, String callingPackage,
+                Intent intent, String resolvedType, Bundle options) {
+            checkCaller();
+
+            int callingUser = UserHandle.getCallingUserId();
+            TaskRecord tr;
+            IApplicationThread appThread;
+            synchronized (ActivityManagerService.this) {
+                tr = recentTaskForIdLocked(mTaskId);
+                if (tr == null) {
+                    throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
+                }
+                appThread = ApplicationThreadNative.asInterface(whoThread);
+                if (appThread == null) {
+                    throw new IllegalArgumentException("Bad app thread " + appThread);
+                }
+            }
+            return mStackSupervisor.startActivityMayWait(appThread, -1, callingPackage, intent,
+                    resolvedType, null, null, null, null, 0, 0, null, null,
+                    null, options, callingUser, null, tr);
+        }
+
+        @Override
+        public void setExcludeFromRecents(boolean exclude) {
+            checkCaller();
+
+            synchronized (ActivityManagerService.this) {
+                long origId = Binder.clearCallingIdentity();
+                try {
+                    TaskRecord tr = recentTaskForIdLocked(mTaskId);
+                    if (tr == null) {
+                        throw new IllegalArgumentException("Unable to find task ID " + mTaskId);
+                    }
+                    Intent intent = tr.getBaseIntent();
+                    if (exclude) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                    } else {
+                        intent.setFlags(intent.getFlags()
+                                & ~Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                    }
+                } finally {
+                    Binder.restoreCallingIdentity(origId);
+                }
+            }
+        }
+   }
 }

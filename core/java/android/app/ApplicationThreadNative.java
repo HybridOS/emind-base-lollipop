@@ -24,6 +24,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.CompatibilityInfo;
+import android.content.res.MultiWindowCompatibility;/**add by xiezhongtian*/
+import android.graphics.Rect;/**end*/
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Binder;
@@ -290,9 +292,10 @@ public abstract class ApplicationThreadNative extends Binder
             CompatibilityInfo compatInfo = CompatibilityInfo.CREATOR.createFromParcel(data);
             HashMap<String, IBinder> services = data.readHashMap(null);
             Bundle coreSettings = data.readBundle();
+            MultiWindowCompatibility mwCompat = null;/**???????????Fixed Me*/
             bindApplication(packageName, info, providers, testName, profilerInfo, testArgs,
                     testWatcher, uiAutomationConnection, testMode, openGlTrace,
-                    restrictedBackupMode, persistent, config, compatInfo, services, coreSettings);
+                    restrictedBackupMode, persistent, config, compatInfo, mwCompat, services, coreSettings);/**add by xiezhongtian 'mwCompat'*/
             return true;
         }
 
@@ -951,14 +954,14 @@ class ApplicationThreadProxy implements IApplicationThread {
                 IBinder.FLAG_ONEWAY);
         data.recycle();
     }
-
+    /**there add 'MultiWindowCompatibility mwCompat' for compile pass*/
     public final void bindApplication(String packageName, ApplicationInfo info,
             List<ProviderInfo> providers, ComponentName testName, ProfilerInfo profilerInfo,
             Bundle testArgs, IInstrumentationWatcher testWatcher,
             IUiAutomationConnection uiAutomationConnection, int debugMode,
             boolean openGlTrace, boolean restrictedBackupMode, boolean persistent,
-            Configuration config, CompatibilityInfo compatInfo, Map<String, IBinder> services,
-            Bundle coreSettings) throws RemoteException {
+            Configuration config, CompatibilityInfo compatInfo, MultiWindowCompatibility mwCompat, 
+            Map<String, IBinder> services, Bundle coreSettings) throws RemoteException {
         Parcel data = Parcel.obtain();
         data.writeInterfaceToken(IApplicationThread.descriptor);
         data.writeString(packageName);
@@ -985,6 +988,7 @@ class ApplicationThreadProxy implements IApplicationThread {
         data.writeInt(persistent ? 1 : 0);
         config.writeToParcel(data, 0);
         compatInfo.writeToParcel(data, 0);
+        mwCompat.writeToParcel(data, 0);/**add by xiezhongtian*/
         data.writeMap(services);
         data.writeBundle(coreSettings);
         mRemote.transact(BIND_APPLICATION_TRANSACTION, data, null,
@@ -1348,6 +1352,14 @@ class ApplicationThreadProxy implements IApplicationThread {
         data.writeInterfaceToken(IApplicationThread.descriptor);
         data.writeStrongBinder(token);
         mRemote.transact(ENTER_ANIMATION_COMPLETE_TRANSACTION, data, null, IBinder.FLAG_ONEWAY);
+        data.recycle();
+    }
+    /**add by xiezhongtian*/
+    public void scheduleUpdateAppPrefSize(Rect rect) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        data.writeInterfaceToken(IApplicationThread.descriptor);
+        rect.writeToParcel(data, 0);
+        this.mRemote.transact(56, data, null, 1);
         data.recycle();
     }
 }

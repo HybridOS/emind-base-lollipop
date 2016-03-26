@@ -80,6 +80,7 @@ import android.os.SystemClock;
 import android.os.Trace;
 import android.os.UserHandle;
 import android.service.voice.IVoiceInteractionSession;
+import android.text.TextUtils;
 import android.util.EventLog;
 import android.util.Slog;
 import android.view.Display;
@@ -253,6 +254,8 @@ final class ActivityStack {
     }
 
     final Handler mHandler;
+    /**add by xiezhongtian*/
+    public boolean mIsFrontedStack = SHOW_APP_STARTING_PREVIEW;
 
     final class ActivityStackHandler extends Handler {
         //public Handler() {
@@ -476,10 +479,14 @@ final class ActivityStack {
     final void moveToFront(String reason) {
         if (isAttached()) {
             if (isOnHomeDisplay()) {
-                mStackSupervisor.moveHomeStack(isHomeStack(), reason);
+                //mStackSupervisor.moveHomeStack(isHomeStack(), reason);
+                mStackSupervisor.setFocusedStack(this);/**fixed by xiezhongtian*/
             }
             mStacks.remove(this);
             mStacks.add(this);
+            if (!isStackBehindVisible()) {
+                this.mStackSupervisor.pauseBackStacks(this.mStackSupervisor.mUserLeaving, SHOW_APP_STARTING_PREVIEW, SHOW_APP_STARTING_PREVIEW);
+            } 
             final TaskRecord task = topTask();
             if (task != null) {
                 mWindowManager.moveTaskToTop(task.taskId);
@@ -784,11 +791,11 @@ final class ActivityStack {
             completePauseLocked(false);
         }
         ActivityRecord prev = mResumedActivity;
-        if (prev == null) {
-            if (!resuming) {
+        if (prev == null) {/**fixed by xiezhongtian*/
+            /*if (!resuming) {
                 Slog.wtf(TAG, "Trying to pause when nothing is resumed");
                 mStackSupervisor.resumeTopActivitiesLocked();
-            }
+            }*/
             return false;
         }
 
@@ -982,6 +989,7 @@ final class ActivityStack {
                         if (DEBUG_PAUSE) Slog.v(TAG, "To many pending stops, forcing idle");
                         mStackSupervisor.scheduleIdleLocked();
                     } else {
+                        mStackSupervisor.scheduleIdleLocked();/**add by xiezhongtian*/
                         mStackSupervisor.checkReadyForSleepLocked();
                     }
                 }
@@ -1006,6 +1014,7 @@ final class ActivityStack {
                     // we need to go ahead and resume it to ensure we complete
                     // an in-flight app switch.
                     mStackSupervisor.resumeTopActivitiesLocked(topStack, null, null);
+                    mWindowManager.executeAppTransition();/**add by xiezhongtian*/
                 }
             }
         }
@@ -1178,6 +1187,24 @@ final class ActivityStack {
 
         return true;
     }
+    /**add by xiezhongtian*/
+    boolean isStackBehindVisible() {
+        ArrayList<TaskRecord> tasks = getAllTasks();
+        if (isHomeStack() || !this.mIsFrontedStack) {
+            return true;
+        }
+        for (int taskNdx = 1; taskNdx < tasks.size(); taskNdx += 1) {
+            ArrayList<ActivityRecord> activities = ((TaskRecord) tasks.get(taskNdx)).mActivities;
+            for (int activityNdx = 0; activityNdx < activities.size(); activityNdx += 1) {
+                ActivityRecord r = (ActivityRecord) activities.get(activityNdx);
+                if (!r.finishing && r.fullscreen) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 
     /**
      * Make sure that all activities that need to be visible (that is, they
@@ -3470,6 +3497,7 @@ final class ActivityStack {
             String reason) {
         if (DEBUG_SWITCH) Slog.v(TAG, "moveTaskToFront: " + tr);
 
+        mIsFrontedStack = SHOW_APP_STARTING_PREVIEW;/**add by xiezhongtian*/
         final int numTasks = mTaskHistory.size();
         final int index = mTaskHistory.indexOf(tr);
         if (numTasks == 0 || index < 0)  {
@@ -3526,7 +3554,12 @@ final class ActivityStack {
             Slog.i(TAG, "moveTaskToBack: bad taskId=" + taskId);
             return false;
         }
-
+        /**add by xiezhongtian*/
+        if (!this.mIsFrontedStack) {
+            Slog.e("ActivityManager", "moveTaskToBack: not in front=" + taskId);
+        }
+        boolean stackBehindVisible = isStackBehindVisible();
+        mIsFrontedStack = SCREENSHOT_FORCE_565;/**end*/
         Slog.i(TAG, "moveTaskToBack: " + tr);
 
         mStackSupervisor.endLockTaskModeIfTaskEnding(tr);
@@ -3574,8 +3607,8 @@ final class ActivityStack {
                 task.setTaskToReturnTo(HOME_ACTIVITY_TYPE);
             }
         }
-
-        mWindowManager.prepareAppTransition(AppTransition.TRANSIT_TASK_TO_BACK, false);
+/**节点*/
+        //mWindowManager.prepareAppTransition(AppTransition.TRANSIT_TASK_TO_BACK, false);/**fixed by xiezhongtian*/
         mWindowManager.moveTaskToBottom(taskId);
 
         if (VALIDATE_TOKENS) {

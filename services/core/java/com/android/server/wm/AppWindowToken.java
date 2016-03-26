@@ -31,6 +31,7 @@ import android.view.WindowManager;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import android.graphics.Rect;/**add by xiezhongtian*/
 
 class AppTokenList extends ArrayList<AppWindowToken> {
 }
@@ -70,6 +71,8 @@ class AppWindowToken extends WindowToken {
     int numDrawnWindows;
     boolean inPendingTransaction;
     boolean allDrawn;
+    boolean appCompatFullScreen;/**add by xiezhongtian*/
+    Rect mFrameInsets;/**end*/
     // Set to true when this app creates a surface while in the middle of an animation. In that
     // case do not clear allDrawn until the animation completes.
     boolean deferClearAllDrawn;

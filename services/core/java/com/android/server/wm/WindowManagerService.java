@@ -23,13 +23,13 @@ import android.app.AppOpsManager;
 import android.os.Build;
 import android.os.SystemService;
 import android.util.ArraySet;
-import android.util.ChaoZhuoUtils;
+import android.util.ChaoZhuoUtils;/**add by xiezhongtian*/
 import android.util.TimeUtils;
 import android.view.IWindowId;
 
 import android.view.IWindowSessionCallback;
 import android.view.WindowContentFrameStats;
-import android.view.WindowInfo;
+import android.view.WindowInfo;/**add by xiezhongtian*/
 import com.android.internal.app.IBatteryStats;
 import com.android.internal.policy.PolicyManager;
 import com.android.internal.policy.impl.PhoneWindowManager;
@@ -158,7 +158,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.List;/**add by xiezhongtian*/
 
 /** {@hide} */
 public class WindowManagerService extends IWindowManager.Stub
@@ -438,8 +438,10 @@ public class WindowManagerService extends IWindowManager.Stub
      */
     final ArrayList<WindowState> mRelayoutWhileAnimating = new ArrayList<WindowState>();
  
-    //[emindsoft] add by xiezhongtian for "showResizingFrame"
+    /**[emindsoft] add by xiezhongtian*/
     ResizingStackFrame mResizingStackFrame;
+    public int mSystemAppWindowMode;
+    boolean mDisableTransitionAnimation;/**end*/
 
     /**
      * Used when rebuilding window list to keep track of windows that have
@@ -4413,6 +4415,18 @@ public class WindowManagerService extends IWindowManager.Stub
             }
         }
     }
+    /**add  by xiezhongtian*/
+    public void forceAppFullscreenShow(IBinder token, boolean fullScreen) {
+        synchronized (this.mWindowMap) {
+            AppWindowToken atoken = findAppWindowToken(token);
+            if (!(atoken == null || atoken.appCompatFullScreen == fullScreen)) {
+                atoken.appCompatFullScreen = fullScreen;
+                if (this.mSystemAppWindowMode == UPDATE_FOCUS_PLACING_SURFACES) {
+                    requestTraversalLocked();
+                }
+            }
+        }
+    }
 
     public void setWindowOpaque(IBinder token, boolean isOpaque) {
         synchronized (mWindowMap) {
@@ -5264,7 +5278,7 @@ public class WindowManagerService extends IWindowManager.Stub
             }
         }
     }
-    
+    /**add by xiezhongtian*/ 
     public void showResizingFrame(Rect bounds) {
           SurfaceControl.openTransaction();
           try {
@@ -5284,7 +5298,33 @@ public class WindowManagerService extends IWindowManager.Stub
           }
       }
 
+     public void moveStack(int stackId, int newX, int newY) {
+         synchronized (this.mWindowMap) {
+             TaskStack stack = (TaskStack) this.mStackIdToStack.get(stackId);
+             if (stack == null) {
+                 throw new IllegalArgumentException("resizeStack: stackId " + stackId + " not found.");
+             }
+             Rect bounds = new Rect();
+             stack.getBounds(bounds);
+             bounds.offsetTo(newX, newY);
+             if (stack.setBounds(bounds)) {
+                 stack.getDisplayContent().layoutNeeded = HIDE_STACK_CRAWLS;
+                 performLayoutAndPlaceSurfacesLocked();
+             }
+         }
+     }
 
+     public void resizeStackForRotation(int stackId, Rect bounds) {
+         synchronized (this.mWindowMap) {
+             TaskStack stack = (TaskStack) this.mStackIdToStack.get(stackId);
+             if (stack == null) {
+                 throw new IllegalArgumentException("resizeStack: stackId " + stackId + " not found.");
+             }
+             if (stack.setBounds(bounds)) {
+                 stack.resizeWindows();
+             }
+         }
+     }/**end*/
 
     public void getStackBounds(int stackId, Rect bounds) {
         final TaskStack stack = mStackIdToStack.get(stackId);
@@ -7614,6 +7654,7 @@ public class WindowManagerService extends IWindowManager.Stub
         public static final int WINDOW_FREEZE_TIMEOUT = 11;
 
         public static final int APP_TRANSITION_TIMEOUT = 13;
+        public static final int BOOTFINISHED_DELAY = 39;/**add by xiezhongtian*/
         public static final int PERSIST_ANIMATION_SCALE = 14;
         public static final int FORCE_GC = 15;
         public static final int ENABLE_SCREEN = 16;

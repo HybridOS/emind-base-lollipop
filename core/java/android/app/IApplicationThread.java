@@ -25,6 +25,8 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
+import android.content.res.MultiWindowCompatibility;/**add by xiezhongtian*/
+import android.graphics.Rect;/**end*/
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Debug;
@@ -87,6 +89,7 @@ public interface IApplicationThread extends IInterface {
             Intent intent, boolean rebind, int processState) throws RemoteException;
     void scheduleUnbindService(IBinder token,
             Intent intent) throws RemoteException;
+    void scheduleUpdateAppPrefSize(Rect rect) throws RemoteException;
     void scheduleServiceArgs(IBinder token, boolean taskRemoved, int startId,
             int flags, Intent args) throws RemoteException;
     void scheduleStopService(IBinder token) throws RemoteException;
@@ -97,8 +100,8 @@ public interface IApplicationThread extends IInterface {
             ComponentName testName, ProfilerInfo profilerInfo, Bundle testArguments,
             IInstrumentationWatcher testWatcher, IUiAutomationConnection uiAutomationConnection,
             int debugMode, boolean openGlTrace, boolean restrictedBackupMode, boolean persistent,
-            Configuration config, CompatibilityInfo compatInfo, Map<String, IBinder> services,
-            Bundle coreSettings) throws RemoteException;
+            Configuration config, CompatibilityInfo compatInfo, MultiWindowCompatibility mwCompat,
+            Map<String, IBinder> services, Bundle coreSettings) throws RemoteException;
     void scheduleExit() throws RemoteException;
     void scheduleSuicide() throws RemoteException;
     void scheduleConfigurationChanged(Configuration config) throws RemoteException;
@@ -204,4 +207,5 @@ public interface IApplicationThread extends IInterface {
     int CANCEL_VISIBLE_BEHIND_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+52;
     int BACKGROUND_VISIBLE_BEHIND_CHANGED_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+53;
     int ENTER_ANIMATION_COMPLETE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+54;
+    int SCHEDULE_APP_PREF_SIZE = IBinder.FIRST_CALL_TRANSACTION+55;/**add by xiezhongtian*/
 }

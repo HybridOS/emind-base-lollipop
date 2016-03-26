@@ -31,6 +31,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.res.CompatibilityInfo;
+import android.content.res.MultiWindowCompatibility;/**add by xiezhongtian*/
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Process;
@@ -76,6 +77,7 @@ final class ProcessRecord {
     long lastPss;               // Last computed memory pss.
     long lastCachedPss;         // Last computed pss when in cached state.
     int maxAdj;                 // Maximum OOM adjustment for this process
+    MultiWindowCompatibility mwCompat;/**add by xiezhongtian*/
     int curRawAdj;              // Current OOM unlimited adjustment for this process
     int setRawAdj;              // Last set OOM unlimited adjustment for this process
     int curAdj;                 // Current OOM adjustment for this process

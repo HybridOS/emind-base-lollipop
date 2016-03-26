@@ -37,12 +37,14 @@ import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
+import android.content.res.MultiWindowCompatibility;/**add by xiezhongtian*/
 import android.content.res.Resources;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDebug;
 import android.database.sqlite.SQLiteDebug.DbStats;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;/**add by xiezhongtian*/
 import android.hardware.display.DisplayManagerGlobal;
 import android.net.ConnectivityManager;
 import android.net.IConnectivityManager;
@@ -167,6 +169,9 @@ public final class ActivityThread {
     private static final int SQLITE_MEM_RELEASED_EVENT_LOG_TAG = 75003;
     private static final int LOG_ON_PAUSE_CALLED = 30021;
     private static final int LOG_ON_RESUME_CALLED = 30022;
+    /**add by xiezhongtian*/
+    public static Rect sAppPrefSize = null;
+    public static boolean sImeProcess = DEBUG_SERVICE;
 
     /** Type for IActivityManager.serviceDoneExecuting: anonymous operation */
     public static final int SERVICE_DONE_EXECUTING_ANON = 0;
@@ -441,6 +446,7 @@ public final class ActivityThread {
         ComponentName instrumentationName;
         Bundle instrumentationArgs;
         IInstrumentationWatcher instrumentationWatcher;
+        MultiWindowCompatibility mwCompat;/**add by xiezhongtian*/
         IUiAutomationConnection instrumentationUiAutomationConnection;
         int debugMode;
         boolean enableOpenGlTrace;
@@ -758,8 +764,8 @@ public final class ActivityThread {
                 IInstrumentationWatcher instrumentationWatcher,
                 IUiAutomationConnection instrumentationUiConnection, int debugMode,
                 boolean enableOpenGlTrace, boolean isRestrictedBackupMode, boolean persistent,
-                Configuration config, CompatibilityInfo compatInfo, Map<String, IBinder> services,
-                Bundle coreSettings) {
+                Configuration config, CompatibilityInfo compatInfo, MultiWindowCompatibility mwCompat,
+                Map<String, IBinder> services, Bundle coreSettings) {
 
             if (services != null) {
                 // Setup the service cache in the ServiceManager
@@ -819,6 +825,7 @@ public final class ActivityThread {
             data.persistent = persistent;
             data.config = config;
             data.compatInfo = compatInfo;
+            data.mwCompat = mwCompat;/**add by xiezhongtian*/
             data.initProfilerInfo = profilerInfo;
             sendMessage(H.BIND_APPLICATION, data);
         }
@@ -829,6 +836,10 @@ public final class ActivityThread {
 
         public final void scheduleSuicide() {
             sendMessage(H.SUICIDE, null);
+        }
+        /**add by xiezhongtian*/
+        public void scheduleUpdateAppPrefSize(Rect rect) {
+            sendMessage(H.UPDATE_APP_PREFSIZE, rect);
         }
 
         public void scheduleConfigurationChanged(Configuration config) {
@@ -1227,6 +1238,7 @@ public final class ActivityThread {
         public static final int TRIM_MEMORY             = 140;
         public static final int DUMP_PROVIDER           = 141;
         public static final int UNSTABLE_PROVIDER_DIED  = 142;
+        public static final int UPDATE_APP_PREFSIZE     = 150;/**add by xiezhongtian*/
         public static final int REQUEST_ASSIST_CONTEXT_EXTRAS = 143;
         public static final int TRANSLUCENT_CONVERSION_COMPLETE = 144;
         public static final int INSTALL_PROVIDER        = 145;
@@ -1515,6 +1527,9 @@ public final class ActivityThread {
                     break;
                 case ENTER_ANIMATION_COMPLETE:
                     handleEnterAnimationComplete((IBinder) msg.obj);
+                    break;
+                case UPDATE_APP_PREFSIZE /*150*/:  /**add by xiezhongtian*/
+                    handleUpdateAppSize((Rect) msg.obj);
                     break;
             }
             if (DEBUG_MESSAGES) Slog.v(TAG, "<<< done: " + codeToString(msg.what));
@@ -2331,6 +2346,7 @@ public final class ActivityThread {
         return activity;
     }
 
+    /**?????????There should be add something by phoenix, i ignore it now xiezhongtian*/
     private Context createBaseContextForActivity(ActivityClientRecord r,
             final Activity activity) {
         ContextImpl appContext = ContextImpl.createActivityContext(this, r.packageInfo, r.token);
@@ -2554,6 +2570,12 @@ public final class ActivityThread {
     }
 
     private static final ThreadLocal<Intent> sCurrentBroadcastIntent = new ThreadLocal<Intent>();
+    /**add by xiezhongtian*/
+    public void handleUpdateAppSize(Rect rect) {
+        if (!sImeProcess && this.mConfiguration.system_mode != SERVICE_DONE_EXECUTING_START) {
+            sAppPrefSize = rect;
+        }
+    }
 
     /**
      * Return the Intent that's currently being handled by a

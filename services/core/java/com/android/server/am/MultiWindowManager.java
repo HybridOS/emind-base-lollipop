@@ -15,9 +15,11 @@ import android.util.Xml;
 import android.view.DisplayInfo;
 import com.android.internal.util.FastXmlSerializer;
 import com.android.server.wm.WindowManagerService;
+/*
 import com.chaozhuo.onlineconfig.CZOnlineConfigInfo;
 import com.chaozhuo.onlineconfig.CZOnlineConfigManager;
 import com.chaozhuo.onlineconfig.CZOnlineConfigManager.ConfigUpdateListener;
+*/
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,7 +42,7 @@ public class MultiWindowManager {
     public static final int WINDOW_MODE_PHONE = 0;
     public static final int WINDOW_MODE_TABLET = 2;
     static final long WRITE_DELAY = 5000;
-    private static int sBigScreenHeight = VoldResponseCode.FstrimCompleted;
+    private static int sBigScreenHeight = 700;
     private static int sBigScreenWidth = 1200;
     private static int sBigScreenWindowHeight = 620;
     private static int sBigScreenWindowWidth = 1100;
@@ -93,12 +95,15 @@ public class MultiWindowManager {
         this.mHandler = new Handler();
         this.mFile = new AtomicFile(new File(new File(Environment.getDataDirectory(), "system"), "app_window_settings.xml"));
         loadAppWindowRects();
+        /**这里主要和窗口模式切换相关*/
+        /*
         CZOnlineConfigManager.getInstance().addConfigUpdateListener("window_open_mode", new ConfigUpdateListener() {
             public void onConfigUpdated(String name, int version, String filePath) {
                 Log.d(MultiWindowManager.TAG, "onConfigUpdated, reloading...");
                 MultiWindowManager.this.loadWriteList();
             }
         });
+       */
     }
 
     public boolean moveAppWindow(ActivityRecord r, int dx, int dy) {
@@ -402,7 +407,7 @@ public class MultiWindowManager {
     }
 
     private void loadWriteList() {
-        File file;
+/*        File file;
         FileNotFoundException ex;
         Throwable th;
         IOException ex2;
@@ -497,7 +502,8 @@ public class MultiWindowManager {
                     fis = fis2;
                     reader.close();
                     fis.close();
-                    throw th;
+                    //throw th;
+                    return;
                 }
             } catch (FileNotFoundException e9) {
                 ex = e9;
@@ -518,6 +524,7 @@ public class MultiWindowManager {
         this.writeList.put("com.chaozhuo.browser", Integer.valueOf(WINDOW_MODE_LANDSCAPE));
         this.writeList.put("com.chaozhuo.permission.controller", Integer.valueOf(WINDOW_MODE_LANDSCAPE));
         this.writeList.put("com.chaozhuo.texteditor", Integer.valueOf(WINDOW_MODE_LANDSCAPE));
+*/
     }
 
     public Rect getRestoredAppWindowPos(String name) {
@@ -621,7 +628,7 @@ public class MultiWindowManager {
             String entryKey = null;
             for (int event = parser.getEventType(); event != WINDOW_MODE_LANDSCAPE; event = parser.next()) {
                 switch (event) {
-                    case WINDOW_MODE_TABLET /*2*/:
+                    case WINDOW_MODE_TABLET:
                         try {
                             if (!"system_app_window_mode".equals(parser.getName())) {
                                 if (!"pkg".equals(parser.getName())) {
@@ -655,10 +662,10 @@ public class MultiWindowManager {
                             break;
                         } catch (Exception e) {
                             e.printStackTrace();
-                            return;
+                            //return;
                         }
                         break;
-                    case H.REPORT_LOSING_FOCUS /*3*/:
+                    case 3:
                         if ("pkg".equals(parser.getName())) {
                             this.mEntries.put(entryKey, entry);
                             entryKey = null;
@@ -670,7 +677,10 @@ public class MultiWindowManager {
             }
         } catch (FileNotFoundException e2) {
             Slog.i(TAG, "No existing display settings " + this.mFile.getBaseFile() + "; starting empty");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
     }
 
     private int getIntAttribute(XmlPullParser parser, String name) {
